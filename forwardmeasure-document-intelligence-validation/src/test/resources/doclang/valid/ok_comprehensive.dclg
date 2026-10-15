@@ -1,0 +1,686 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<doclang xmlns="https://www.doclang.ai/ns/v0">
+
+  <!-- Example 0: Head element with arbitrary metadata -->
+  <head>
+    <title>Document Metadata</title>
+    <author>John Doe</author>
+    <date>2024-03-27</date>
+    <keywords>doclang, schema, test</keywords>
+    <custom-field type="internal">
+      <id>DOC-12345</id>
+      <status>draft</status>
+    </custom-field>
+  </head>
+
+  <!-- Example 1: Simple heading with level attribute -->
+  <heading level="1">Introduction</heading>
+
+  <!-- Example 1b: Title element -->
+  <heading>Document Title: A Comprehensive Guide</heading>
+
+  <!-- Example 1c: Title with formatting -->
+  <heading>
+    <bold>Advanced Topics</bold> in <italic>Machine Learning</italic>
+  </heading>
+
+  <!-- Example 1d: Code element with language label (Linguist) -->
+  <code>
+    <label value="Python"/>
+    <content>if x == y:
+  print("Hello, World!")</content>
+  </code>
+
+  <!-- Example 1e: Code element without language label -->
+  <code>
+    SELECT * FROM users WHERE id = 1;
+  </code>
+
+  <!-- Example 1f: Code with formatting -->
+  <code>
+    <label value="Java"/>
+    <bold>public</bold>
+    <content> class Main {
+    // Main method</content>
+  </code>
+
+  <!-- Example 1g: Formula element -->
+  <formula>
+    E = mc^2
+  </formula>
+
+  <!-- Example 1h: More complex formula -->
+  <formula>
+    x = \frac{-b \pm \sqrt{b^{2} - 4ac}}{2a}
+  </formula>
+
+  <!-- Example 1i: Field region (empty) -->
+  <field_region>
+  </field_region>
+
+  <!-- Example 1j: Field region with text elements -->
+  <field_region>
+    <text>Name: John Doe</text>
+    <text>Email: john@example.com</text>
+    <text>Phone: +1-555-0123</text>
+  </field_region>
+
+  <!-- Example 1ka-1mc: Field elements in valid placement -->
+  <field_region>
+    <!-- Example 1ka: Field heading with default level (1) -->
+    <field_heading>
+      <bold>Customer Information</bold>
+    </field_heading>
+
+    <!-- Example 1kb: Field heading with explicit level 1 -->
+    <field_heading level="1">
+      Section A: Personal Details
+    </field_heading>
+
+    <!-- Example 1kc: Field heading with level 2 -->
+    <field_heading level="2">
+      <italic>Subsection:</italic> Contact Information
+    </field_heading>
+
+    <!-- Example 1kd: Field heading with level 3 and nested elements -->
+    <field_heading level="3">
+      <text>Address Details</text>
+    </field_heading>
+
+    <!-- Example 1k: Field item with text -->
+    <field_item>
+      <text>Customer Name</text>
+    </field_item>
+
+    <!-- Example 1l: Key with inline formatting -->
+    <field_item>
+      <key>
+        <bold>Invoice Number:</bold>
+      </key>
+    </field_item>
+
+    <!-- Example 1la: Key with plain text (mixed content) -->
+    <field_item><key>Name:</key></field_item>
+
+    <!-- Example 1lb: Key with text and formatting mixed -->
+    <field_item><key>Customer <bold>ID</bold>:</key></field_item>
+
+    <!-- Example 1lc: Key with content element -->
+    <field_item>
+      <key>
+        <content>Email Address:</content>
+      </key>
+    </field_item>
+
+    <!-- Example 1ld: Key with multiple formatting -->
+    <field_item>
+      <key>
+        <bold>Customer</bold> <italic>Reference</italic> Number
+      </key>
+    </field_item>
+
+    <!-- Example 1m: Value with plain text (default read_only) -->
+    <field_item><value>INV-2024-001</value></field_item>
+
+    <!-- Example 1ma: Value with text and formatting mixed (explicit read_only) -->
+    <field_item><value class="read_only">Status: <bold>Active</bold></value></field_item>
+
+    <!-- Example 1mb: Value with content element (fillable) -->
+    <field_item>
+      <value class="fillable">
+        <content>john.doe@example.com</content>
+      </value>
+    </field_item>
+
+    <!-- Example 1mc: Value with formatting (fillable) -->
+    <field_item>
+      <value class="fillable">
+        <italic>Confidential</italic>
+      </value>
+    </field_item>
+  </field_region>
+
+  <!-- Example 1n: Field region with key-value pairs (mixed content and class attributes) -->
+  <field_region>
+    <field_item>
+      <key><bold>Name:</bold></key>
+      <value class="read_only">John Doe</value>
+    </field_item>
+    <field_item>
+      <key>Email:</key>
+      <value class="fillable"><content>john@example.com</content></value>
+    </field_item>
+    <field_item>
+      <key><italic>Phone:</italic></key>
+      <value class="fillable">+1-555-0123</value>
+    </field_item>
+    <field_item>
+      <key>Status:</key>
+      <value class="read_only">Active (<bold>Verified</bold>)</value>
+    </field_item>
+  </field_region>
+
+  <!-- Example 2: Text with formatting -->
+  <text>
+    This is <bold>bold text</bold> and this is <italic>italic text</italic>.
+  </text>
+
+  <!-- Example 2a: Text with href in element head -->
+  <text>
+    <href uri="https://example.com"/>
+    Visit our website for more information.
+  </text>
+
+  <!-- Example 2a1: Text with href and link label in body -->
+  <text>
+    <href uri="https://example.com/docs"/>
+    Click here to read the documentation.
+  </text>
+
+  <!-- Example 2a2: Text with href and formatted link label in body -->
+  <text>
+    <href uri="https://example.com/file.pdf"/>
+    Download the <italic>PDF file</italic> now.
+  </text>
+
+  <!-- Example 2a3: Text with href and nested formatting in body -->
+  <text>
+    <href uri="https://example.com/article"/>
+    See <bold>this <italic>important</italic> article</bold> for details.
+  </text>
+
+  <!-- Example 2b: Text with content element (whitespace preserved by schema default) -->
+  <text>
+    <content>  This text   has    multiple    spaces   preserved  </content>
+  </text>
+
+  <!-- Example 3: New formatting elements -->
+  <text>
+    <strikethrough>deleted text</strikethrough>, <underline>underlined text</underline>, 2<superscript>nd</superscript>, O<subscript>2</subscript>.
+  </text>
+
+  <!-- Example 4: Picture with URI -->
+  <picture>
+    <src uri="https://example.com/image.jpg"/>
+  </picture>
+
+  <!-- Example 5: Picture with element head and URI -->
+  <picture>
+    <location value="10" resolution="72"/>
+    <location value="20" resolution="72"/>
+    <location value="200"/>
+    <location value="150"/>
+    <src uri="https://example.com/photo.png"/>
+  </picture>
+
+  <!-- Example 6: Picture without URI -->
+  <picture/>
+
+  <!-- Example 7: Caption element (in element head of group) -->
+  <group>
+    <caption>Figure 1: Sample diagram showing the process flow</caption>
+  </group>
+
+  <!-- Example 8: Caption with formatting (in element head of group) -->
+  <group>
+    <caption>
+      <bold>Table 1:</bold> <italic>Results of the experiment</italic>
+    </caption>
+  </group>
+
+  <!-- Example 8b: Page header element -->
+  <page_header>Document Title - Page 1</page_header>
+
+  <!-- Example 8c: Page header with formatting -->
+  <page_header>
+    <bold>Annual Report 2024</bold> | Section 3
+  </page_header>
+
+  <!-- Example 8d: Page footer element -->
+  <page_footer>Copyright © 2024 - Page 1 of 10</page_footer>
+
+  <!-- Example 8e: Page footer with formatting -->
+  <page_footer>
+    <italic>Confidential</italic> | Page <bold>5</bold>
+  </page_footer>
+
+  <!-- Example 9: Text with inline picture -->
+  <text>
+    This paragraph contains an inline <picture><src uri="icon.svg"/></picture> image.
+  </text>
+
+  <!-- Example 10: Text with hint element -->
+  <text>
+    This is important information <hint>hover for details</hint> in the text.
+  </text>
+
+  <!-- Example 11: Hint with formatted content -->
+  <text>
+    See the <hint><bold>tooltip</bold></hint> for more information.
+  </text>
+
+  <!-- Example 12: Text with line breaks (whitespace in content) -->
+  <text>
+    <content>First line
+Second line
+Third line</content>
+  </text>
+
+  <!-- Example 13: Text with checkbox (default unselected, explicit selected, explicit unselected) -->
+  <text>
+    Task list: <checkbox/> Item 1, <checkbox class="selected"/> Item 2, <checkbox class="unselected"/> Item 3
+  </text>
+
+  <!-- Example 14: Simple list -->
+  <list>
+    <ldiv/>
+    <text>First item without marker</text>
+    <ldiv/>
+    <text>Second item without marker</text>
+    <ldiv/>
+    <text>Third item without marker</text>
+  </list>
+
+  <!-- Example 14b: List with markers -->
+  <list class="unordered">
+    <ldiv><marker>•</marker></ldiv>
+    <text>Apples</text>
+    <ldiv><marker>•</marker></ldiv>
+    <text>Bananas</text>
+    <ldiv><marker>•</marker></ldiv>
+    <text>Oranges</text>
+  </list>
+
+  <!-- Example 15: List with formatted content and checkboxes -->
+  <list class="unordered">
+    <ldiv><marker><checkbox/></marker></ldiv>
+    <text>Complete task 1 <hint>due today</hint></text>
+    <ldiv><marker><checkbox/></marker></ldiv>
+    <text>Complete task 2</text>
+    <ldiv><marker>!</marker></ldiv>
+    <text><italic>Important</italic> task 3</text>
+  </list>
+
+  <!-- Example 16: Simple OTSL table (must start with cell token) -->
+  <table>
+    <fcel/>
+    <text>Cell 1</text>
+    <fcel/>
+    <text>Cell 2</text>
+    <nl/>
+    <fcel/>
+    <text>Cell 3</text>
+    <fcel/>
+    <text>Cell 4</text>
+  </table>
+
+  <!-- Example 17: OTSL table with headers (must start with cell token) -->
+  <table>
+    <ched/>
+    <text>Header 1</text>
+    <ched/>
+    <text>Header 2</text>
+    <nl/>
+    <fcel/>
+    <text>Data 1</text>
+    <fcel/>
+    <text>Data 2</text>
+  </table>
+
+  <!-- Example 18: Complex OTSL table with various separators (must start with cell token) -->
+  <table>
+    <corn/>
+    <text>Corner</text>
+    <corn/>
+    <text>Col Header</text>
+    <nl/>
+    <rhed/>
+    <text>Row Header</text>
+    <rhed/>
+    <text>Data</text>
+    <nl/>
+    <srow/>
+    <text>Spanning</text>
+    <srow/>
+    <text>Row</text>
+  </table>
+
+  <!-- Example 19: Caption in element head with its own element head -->
+  <group>
+    <caption>
+      <location value="0"/>
+      <location value="200"/>
+      <location value="400"/>
+      <location value="220"/>
+      <bold>Figure 3:</bold> Complex visualization with <hint>interactive elements</hint>
+    </caption>
+  </group>
+
+  <!-- Example 20: Text with complete element head -->
+  <text>
+    <location value="10"/>
+    <location value="20"/>
+    <location value="100"/>
+    <location value="50"/>
+    <custom>
+      <acme_source system="ocr">scanner-a</acme_source>
+      <acme_confidence_score value="0.98"/>
+    </custom>
+    Regular text with <handwriting>handwritten notes</handwriting> and <marker>important</marker> markers.
+  </text>
+
+  <!-- Example 21: Complex nested formatting -->
+  <text>
+    <hint><bold>This is bold with <italic>nested italic</italic> and tooltip</bold></hint>, plus <marker>mark</marker> and <checkbox/>.
+  </text>
+
+  <!-- Example 22: OTSL with element head and all separator types -->
+  <table>
+    <location value="100"/>
+    <location value="100"/>
+    <location value="500"/>
+    <location value="300"/>
+    <custom>
+      <acme_assessment>positive</acme_assessment>
+      <acme_confidence_score value="0.98"/>
+    </custom>
+    <fcel/>
+    <text>A</text>
+    <fcel/>
+    <text>B</text>
+    <ecel/>
+    <text>C</text>
+    <nl/>
+    <lcel/>
+    <text>D</text>
+    <lcel/>
+    <text>E</text>
+    <ucel/>
+    <text>F</text>
+    <xcel/>
+    <text>G</text>
+  </table>
+
+  <!-- Example 23: All new formatting elements together -->
+  <text>
+    Normal text, <bold>bold</bold>, <italic>italic</italic>, <strikethrough>deleted</strikethrough>,
+    <superscript>superscript</superscript>, <subscript>subscript</subscript>,
+    <rtl>right-to-left</rtl>, and <handwriting>handwritten</handwriting>.
+  </text>
+
+  <!-- Example 24: Nested new formatting -->
+  <text>
+    <bold><strikethrough>Bold strikethrough</strikethrough></bold> and
+    <italic><superscript>Italic superscript</superscript></italic>
+  </text>
+
+  <!-- Example 25: Text with multiple line breaks (blank line in content) -->
+  <text>
+    <content>Paragraph 1
+
+Paragraph 2 after double break</content>
+  </text>
+
+  <!-- Example 26: RTL text with formatting -->
+  <text>
+    <rtl>E<bold>D</bold>C<italic>B</italic>A</rtl>
+  </text>
+
+  <!-- Example 27: Scientific notation with super/subscript -->
+  <text>
+    1<superscript>st</superscript> thing to remember: drink H<subscript>2</subscript>O.
+  </text>
+
+  <!-- Example 28: List with caption in element head -->
+  <list class="unordered">
+    <caption>List caption</caption>
+    <ldiv><marker>•</marker></ldiv>
+    <text>First item</text>
+    <ldiv><marker>•</marker></ldiv>
+    <text>Second item</text>
+  </list>
+
+  <!-- Example 29: Text with element head -->
+  <text>
+    Text with metadata
+    <code>inline code and formula NOK</code>
+    <code><![CDATA[<bold>print("hi")</bold>]]></code>
+    <code><![CDATA[<bold>print("hi")</bold>]]></code>
+  </text>
+
+  <!-- Example 30: List with inline stuff -->
+  <list class="unordered">
+    <ldiv><marker>•</marker></ldiv>
+    <text>
+      Text with inline stuff
+      <formula>
+        E = mc^2
+      </formula>
+    </text>
+  </list>
+
+  <!-- Example 31: Ordered list -->
+  <list class="ordered">
+    <ldiv><marker>1.</marker></ldiv>
+    <text>Install dependencies</text>
+    <ldiv><marker>2.</marker></ldiv>
+    <text>Run tests</text>
+    <ldiv><marker>3.</marker></ldiv>
+    <text>Deploy application</text>
+  </list>
+
+  <!-- Example 32: List with empty ldiv (no marker) -->
+  <list class="unordered">
+    <ldiv/>
+    <text>Item without visible marker</text>
+    <ldiv/>
+    <text>Another item without marker</text>
+  </list>
+
+  <!-- Example 32b: List with element head (aligns with table validation) -->
+  <list class="unordered">
+    <location value="10"/>
+    <location value="100"/>
+    <location value="200"/>
+    <location value="150"/>
+    <ldiv><marker>•</marker></ldiv>
+    <text>First item with metadata</text>
+    <ldiv><marker>•</marker></ldiv>
+    <text>Second item with metadata</text>
+  </list>
+
+  <!-- Example 33: Nested lists (ordered and unordered) -->
+  <list class="ordered">
+    <ldiv><marker>1.</marker></ldiv>
+    <text>Setup project</text>
+    <list class="unordered">
+      <ldiv><marker>•</marker></ldiv>
+      <text>Create virtual environment</text>
+      <ldiv><marker>•</marker></ldiv>
+      <text>Configure linter</text>
+    </list>
+    <ldiv><marker>2.</marker></ldiv>
+    <text>Implement features</text>
+  </list>
+
+  <!-- Example 34: List with checkbox markers -->
+  <list class="unordered">
+    <ldiv><marker><checkbox class="selected"/></marker></ldiv>
+    <text>Completed task</text>
+    <ldiv><marker><checkbox class="unselected"/></marker></ldiv>
+    <text>Pending task</text>
+    <ldiv><marker><checkbox/></marker></ldiv>
+    <text>Another pending task (default unselected)</text>
+  </list>
+
+  <!-- Example 35: List with formatted markers -->
+  <list class="unordered">
+    <ldiv><marker><bold>→</bold></marker></ldiv>
+    <text>Item with bold arrow marker</text>
+    <ldiv><marker><italic>*</italic></marker></ldiv>
+    <text>Item with italic asterisk marker</text>
+  </list>
+
+  <!-- Example 36: List with location information for items -->
+  <list class="unordered">
+    <ldiv/>
+    <text>
+      <location value="10"/>
+      <location value="100"/>
+      <location value="200"/>
+      <location value="120"/>
+      First item
+    </text>
+    <ldiv/>
+    <text>
+      <location value="10"/>
+      <location value="130"/>
+      <location value="200"/>
+      <location value="150"/>
+      Second item
+    </text>
+  </list>
+
+  <!-- Example 37: List with mixed content types -->
+  <list class="unordered">
+    <ldiv/>
+    <text>Text item</text>
+    <ldiv/>
+    <code>pass()</code>
+  </list>
+
+  <!-- Example 38: List with inline code and picture -->
+  <list>
+    <ldiv><marker>•</marker></ldiv>
+    <text>
+      <code><bold><content>print("hi")</content></bold></code>
+      <code><![CDATA[<bold>print("hi")</bold>]]></code>
+      <picture>
+        <src uri="https://example.com/image.jpg"/>
+      </picture>
+    </text>
+  </list>
+
+  <!-- Example 39: Empty group -->
+  <group>
+  </group>
+
+  <!-- Example 40: Simple group with multiple elements -->
+  <group>
+    <text>First element in group</text>
+    <text>Second element in group</text>
+  </group>
+
+  <!-- Example 41: Group with element head -->
+  <group>
+    <location value="10"/>
+    <location value="20"/>
+    <location value="100"/>
+    <location value="50"/>
+    <text>Element with coordinates</text>
+    <text>Another element</text>
+  </group>
+
+  <!-- Example 42: Group with picture -->
+  <group>
+    <picture>
+      <caption>Figure 2: System architecture diagram</caption>
+      <src uri="diagram.svg"/>
+    </picture>
+    <text>This diagram illustrates the overall system design.</text>
+  </group>
+
+  <!-- Example 43: Group with table (must start with cell token) -->
+  <group>
+    <caption>Table 1: Sample Data</caption>
+    <table>
+      <fcel/>
+      <text>Name</text>
+      <fcel/>
+      <text>Age</text>
+      <nl/>
+      <fcel/>
+      <text>Alice</text>
+      <fcel/>
+      <text>30</text>
+      <nl/>
+      <fcel/>
+      <text>Bob</text>
+      <fcel/>
+      <text>25</text>
+    </table>
+  </group>
+
+  <!-- Example 44: Group with multiple pictures -->
+  <group>
+    <heading level="3">Photo Gallery</heading>
+    <picture>
+      <caption>Photo 1</caption>
+      <src uri="photo1.jpg"/>
+    </picture>
+    <picture>
+      <caption>Photo 2</caption>
+      <src uri="photo2.jpg"/>
+    </picture>
+  </group>
+
+  <!-- Example 45: Group with table and multiple elements (table with element head) -->
+  <group>
+    <caption>Table 2: Q1 Sales Data</caption>
+    <heading level="2">Sales Report</heading>
+    <text>Q1 2024 results:</text>
+    <table>
+      <location value="100"/>
+      <location value="200"/>
+      <location value="500"/>
+      <location value="300"/>
+      <ched/>
+      <text>Product</text>
+      <ched/>
+      <text>Sales</text>
+      <nl/>
+      <fcel/>
+      <text>Alice</text>
+      <fcel/>
+      <text>$1000</text>
+      <nl/>
+      <fcel/>
+      <text>Bob</text>
+      <fcel/>
+      <text>$1500</text>
+    </table>
+  </group>
+
+  <!-- Example 46: Group with mixed semantic elements -->
+  <group>
+    <text>Some text</text>
+    <list class="unordered">
+      <ldiv><marker>•</marker></ldiv>
+      <text>List item 1</text>
+      <ldiv><marker>•</marker></ldiv>
+      <text>List item 2</text>
+    </list>
+    <code>print("code example")</code>
+  </group>
+
+  <!-- Example 47: Nested groups -->
+  <group>
+    <heading level="2">Section Title</heading>
+    <text>Introduction text</text>
+    <group>
+      <heading level="3">Subsection</heading>
+      <text>Subsection content</text>
+    </group>
+  </group>
+
+  <!-- Example 48: Text with complex nesting -->
+  <text>
+    <content>Lorem </content>
+    ipsum
+    <text>
+      dolor sit amet
+    </text>
+    consectetur adipiscing elit.
+  </text>
+
+</doclang>

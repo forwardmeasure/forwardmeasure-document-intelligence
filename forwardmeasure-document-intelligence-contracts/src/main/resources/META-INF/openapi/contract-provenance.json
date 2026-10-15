@@ -1,0 +1,25 @@
+{
+  "image": "quay.io/docling-project/docling-serve-cpu@sha256:6eda9c524992147c1b0b06a1a9be4894bd68b1f43c86d92c32f996c4c60d18a3",
+  "captureDate": "2026-10-14",
+  "method": "create_app().openapi() in the pinned image, network disabled, lifespan not started",
+  "packages": {
+    "docling-core": "2.101.1",
+    "docling-jobkit": "3.8.2",
+    "docling-serve": "1.37.0",
+    "docling-slim": "2.138.0",
+    "fastapi": "0.141.1",
+    "pydantic": "2.14.1"
+  },
+  "paths": 23,
+  "schemas": 166,
+  "files": {
+    "docling-serve-1.37.0.openapi.json": "e73052b27e837ad75adef97103b310442db5f1424ec5aecb11ae52a7f36fee5f",
+    "docling-serve-1.37.0.codegen.json": "eb71a92486f692e3044d0221ef747798c51829071d90b10232674ef34c4d0d87"
+  },
+  "normalizations": [
+    "Remove Python defaults and const/discriminator annotations for Java union generation; runtime validates union variants.",
+    "Represent homogeneous tuples as arrays of their original element type (integers use int64); mixed tuples use Object arrays. Retain minItems/maxItems.",
+    "Rename adopted operationIds; preserve every upstream REST path and schema.",
+    "Return conversion, chunk and task result bodies as opaque files to preserve native JSON and ZIP bytes."
+  ]
+}

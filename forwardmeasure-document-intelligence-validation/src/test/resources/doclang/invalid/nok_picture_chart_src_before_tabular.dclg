@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<doclang xmlns="https://www.doclang.ai/ns/v0">
+  <!-- Invalid: tabular must immediately follow src when both are present -->
+  <picture class="chart">
+    <src uri="chart.svg"/>
+    <text>Chart caption</text>
+    <tabular>
+      <ched/>A<ched/>B<nl/>
+      <fcel/>1<fcel/>2<nl/>
+    </tabular>
+  </picture>
+</doclang>

@@ -1,0 +1,2426 @@
+{
+  "info": {
+    "_postman_id": "9d315833-607f-4e22-8372-a790c24e7105",
+    "name": "ForwardMeasure Docling Deployment",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Requests for the current ForwardMeasure Docling Serve deployment and the planned Serve 1.37.0 upgrade, supporting the future forwardmeasure-document-intelligence component.\n\nImport the companion environment, or use collection defaults. The observed deployment uses ClusterIP service docling-docling-serve in namespace docling-serve, with no public ingress. Start:\nkubectl --context gke_genai-llm-393115_us-central1_openworkflow-prod -n docling-serve port-forward service/docling-docling-serve 5001:5001 --address 127.0.0.1\n\nSet docling_api_key as a local secret only if API-key authentication is enabled. The collection uses X-Api-Key, not the Geocoding deployment's OIDC flow. Public deployment checks override authentication.\n\nRun Deployment Checks, Standard Conversion's built-in fixture, or the Asynchronous Conversion - Built-in Fixture folder. Async submissions capture docling_task_id; the Runner polls within a configured bound, then fetches the result. When using manual Send, repeat polling until terminal status before fetching. Save results promptly: local task state is ephemeral and fetched results can expire.\n\nHTTP-source requests, file uploads, VLM, hybrid chunking, capability discovery and negative authentication checks are opt-in through clearly named variables. Select actual files in each upload request before enabling it. Repeated multipart to_formats fields represent arrays; Postman supplies the multipart Content-Type boundary automatically.\n\nDocLang smoke checks exercise output presence and retained fixture text through a round trip. They do not perform XSD/Schematron validation or establish complete DCLX asset/geometry fidelity. DCLX export returns an outer ZIP; extract the .dclx member for import.\n\nVerified against the live Serve 1.31.0 OpenAPI contract on October 14, 2026 and reviewed Serve 1.37.0 source. No conversion or administrative clearing request was executed while creating this collection. Source: https://github.com/docling-project/docling-serve/blob/v1.37.0/docling_serve/app.py\nRunner scripting: https://learning.postman.com/docs/tests-and-scripts/write-scripts/postman-sandbox-reference/pm-execution/\n"
+  },
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      {
+        "key": "key",
+        "value": "X-Api-Key",
+        "type": "string"
+      },
+      {
+        "key": "value",
+        "value": "{{docling_api_key}}",
+        "type": "string"
+      },
+      {
+        "key": "in",
+        "value": "header",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "collection_version",
+      "value": "1.0.0",
+      "type": "string",
+      "description": "Collection artifact version."
+    },
+    {
+      "key": "docling_base_url",
+      "value": "http://127.0.0.1:5001",
+      "type": "string",
+      "description": "Port-forward URL, or an approved deployment endpoint. No trailing slash."
+    },
+    {
+      "key": "docling_api_key",
+      "value": "",
+      "type": "string",
+      "description": "Set a local environment value when API-key authentication is enabled."
+    },
+    {
+      "key": "expected_docling_serve_version",
+      "value": "",
+      "type": "string",
+      "description": "Optional exact version assertion; set to 1.37.0 after upgrading."
+    },
+    {
+      "key": "docling_tenant_id",
+      "value": "",
+      "type": "string",
+      "description": "Optional X-Tenant-Id routing context for Ray; does not authorize FEI evidence."
+    },
+    {
+      "key": "source_url",
+      "value": "",
+      "type": "string",
+      "description": "Set an HTTP(S) document URL before enabling HTTP-source requests."
+    },
+    {
+      "key": "poll_wait_seconds",
+      "value": "5",
+      "type": "string",
+      "description": "Server-side long-poll interval."
+    },
+    {
+      "key": "poll_max_attempts",
+      "value": "60",
+      "type": "string",
+      "description": "Bound on the asynchronous workflow polling loop."
+    },
+    {
+      "key": "enable_http_source_requests",
+      "value": "false",
+      "type": "string",
+      "description": "Enable URL conversion after setting source_url."
+    },
+    {
+      "key": "enable_file_upload_requests",
+      "value": "false",
+      "type": "string",
+      "description": "Enable after selecting files in each upload request."
+    },
+    {
+      "key": "enable_doclang_requests",
+      "value": "true",
+      "type": "string",
+      "description": "Export/import synthetic DocLang and export a ZIP containing DCLX."
+    },
+    {
+      "key": "enable_vlm_requests",
+      "value": "false",
+      "type": "string",
+      "description": "Enable only on the corresponding prepared VLM deployment, with uploads enabled."
+    },
+    {
+      "key": "enable_hybrid_chunking_request",
+      "value": "false",
+      "type": "string",
+      "description": "Enable after qualifying the selected tokenizer/preset and required assets."
+    },
+    {
+      "key": "enable_capabilities_request",
+      "value": "false",
+      "type": "string",
+      "description": "Enable for Serve 1.37.0 with capability discovery enabled."
+    },
+    {
+      "key": "enable_authentication_checks",
+      "value": "false",
+      "type": "string",
+      "description": "Enable when API-key authentication is required; checks expect HTTP 401."
+    },
+    {
+      "key": "fixture_filename",
+      "value": "forwardmeasure-docling-smoke.html",
+      "type": "string",
+      "description": "Synthetic HTML fixture filename."
+    },
+    {
+      "key": "fixture_base64",
+      "value": "PCFET0NUWVBFIGh0bWw+CjxodG1sIGxhbmc9ImVuIj48aGVhZD48bWV0YSBjaGFyc2V0PSJ1dGYtOCI+PHRpdGxlPkZvcndhcmRNZWFzdXJlIERvY2xpbmcgc21va2UgdGVzdDwvdGl0bGU+PC9oZWFkPgo8Ym9keT48aDE+Rm9yd2FyZE1lYXN1cmUgRG9jbGluZyBzbW9rZSB0ZXN0PC9oMT4KPHA+VGhpcyBzeW50aGV0aWMgZG9jdW1lbnQgY2hlY2tzIGRvY3VtZW50IGNvbnZlcnNpb24gYW5kIHN0cnVjdHVyZWQgb3V0cHV0LjwvcD4KPGgyPkludm9pY2U8L2gyPjx0YWJsZT48dGhlYWQ+PHRyPjx0aD5JdGVtPC90aD48dGg+QW1vdW50PC90aD48L3RyPjwvdGhlYWQ+Cjx0Ym9keT48dHI+PHRkPkRvY3VtZW50IGNvbnZlcnNpb248L3RkPjx0ZD4xMjMuNDU8L3RkPjwvdHI+PC90Ym9keT48L3RhYmxlPgo8cD5SZWZlcmVuY2U6IEZNLURPQ0xJTkctMDAxLjwvcD48L2JvZHk+PC9odG1sPgo=",
+      "type": "string",
+      "description": "Built-in synthetic document; no remote download or file picker required."
+    },
+    {
+      "key": "fixture_expected_text",
+      "value": "ForwardMeasure Docling smoke test",
+      "type": "string",
+      "description": "Independent expected text for synthetic-fixture conversions."
+    },
+    {
+      "key": "docling_task_id",
+      "value": "",
+      "type": "string",
+      "description": "Captured automatically by asynchronous submission."
+    },
+    {
+      "key": "docling_task_status",
+      "value": "",
+      "type": "string",
+      "description": "Captured automatically by polling."
+    },
+    {
+      "key": "docling_poll_attempt",
+      "value": "0",
+      "type": "string",
+      "description": "Workflow-owned polling counter."
+    },
+    {
+      "key": "docling_fixture_xml",
+      "value": "",
+      "type": "string",
+      "description": "Synthetic DocLang export retained for the round-trip request."
+    },
+    {
+      "key": "observed_docling_serve_version",
+      "value": "",
+      "type": "string",
+      "description": "Last version observed by deployment checks."
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.variables.set('expected_http_status', 200);",
+          "const baseUrl = String(pm.variables.get('docling_base_url') || '');",
+          "if (!/^https?:\\/\\//i.test(baseUrl) || /\\/$/.test(baseUrl)) {",
+          "    throw new Error('Set docling_base_url to an HTTP(S) URL without a trailing slash.');",
+          "}",
+          "const tenantId = String(pm.variables.get('docling_tenant_id') || '').trim();",
+          "if (tenantId) {",
+          "    pm.request.headers.upsert({key: 'X-Tenant-Id', value: tenantId});",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.test('HTTP response has the expected status', function () {",
+          "    pm.expect(pm.response.code).to.equal(Number(pm.variables.get('expected_http_status') || 200));",
+          "});",
+          "pm.test('Response time is recorded', function () {",
+          "    pm.expect(pm.response.responseTime).to.be.a('number');",
+          "});"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Deployment Checks",
+      "description": "Read-only checks. /health is informational; /ready gates model/backend readiness and /livez detects a failed processor.",
+      "item": [
+        {
+          "id": "5fefca08-2b9f-5400-add9-1d599ff3f728",
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{docling_base_url}}/health",
+              "host": [
+                "{{docling_base_url}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "Informational health response; does not establish model readiness.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Probe reports OK', function () {",
+                  "    pm.expect(pm.response.json().status).to.equal('ok');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "a84981ac-ba5a-5238-9c8c-a63d2dce0332",
+          "name": "Liveness",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{docling_base_url}}/livez",
+              "host": [
+                "{{docling_base_url}}"
+              ],
+              "path": [
+                "livez"
+              ]
+            },
+            "description": "Worker/processor liveness. This endpoint is intentionally absent from OpenAPI.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Probe reports OK', function () {",
+                  "    pm.expect(pm.response.json().status).to.equal('ok');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "f865cf19-d84a-52ce-bde3-9b20ea03ad6e",
+          "name": "Readiness",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{docling_base_url}}/ready",
+              "host": [
+                "{{docling_base_url}}"
+              ],
+              "path": [
+                "ready"
+              ]
+            },
+            "description": "Checks initialized models and backend/processor readiness.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Probe reports OK', function () {",
+                  "    pm.expect(pm.response.json().status).to.equal('ok');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "9490df53-22cb-5145-8f6d-5f555fb24cd6",
+          "name": "Installed Versions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{docling_base_url}}/version",
+              "host": [
+                "{{docling_base_url}}"
+              ],
+              "path": [
+                "version"
+              ]
+            },
+            "description": "Captures package versions; optionally asserts expected_docling_serve_version. Requires version information to be enabled.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const payload = pm.response.json();",
+                  "    pm.test('Docling package versions are present', function () {",
+                  "        pm.expect(payload['docling-serve']).to.be.a('string').and.not.empty;",
+                  "        pm.expect(payload['docling-core']).to.be.a('string').and.not.empty;",
+                  "    });",
+                  "    pm.collectionVariables.set('observed_docling_serve_version', payload['docling-serve']);",
+                  "    const expected = String(pm.variables.get('expected_docling_serve_version') || '').trim();",
+                  "    if (expected) {",
+                  "        pm.test('Serve version matches the expected release', function () {",
+                  "            pm.expect(payload['docling-serve']).to.equal(expected);",
+                  "        });",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "f9865d9f-c5fe-5c30-8668-2cf690ed562e",
+          "name": "OpenAPI Contract",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{docling_base_url}}/openapi.json",
+              "host": [
+                "{{docling_base_url}}"
+              ],
+              "path": [
+                "openapi.json"
+              ]
+            },
+            "description": "Loads the server contract. API docs must be enabled; this route works with installed 1.31.0 and targeted 1.37.0.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const payload = pm.response.json();",
+                  "    pm.test('OpenAPI advertises the conversion and task routes', function () {",
+                  "        pm.expect(payload.openapi).to.be.a('string');",
+                  "        ['/v1/convert/source', '/v1/convert/file', '/v1/convert/source/async',",
+                  "         '/v1/status/poll/{task_id}', '/v1/result/{task_id}'].forEach(function (path) {",
+                  "            pm.expect(payload.paths).to.have.property(path);",
+                  "        });",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Standard Conversion",
+      "description": "Start with the built-in synthetic HTML fixture. Upload and HTTP-source examples are opt-in.",
+      "item": [
+        {
+          "id": "98f4a15c-13c6-5361-a9a0-d478c899f88d",
+          "name": "Convert Built-in Fixture - JSON Markdown Text",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{docling_base_url}}/v1/convert/source",
+              "host": [
+                "{{docling_base_url}}"
+              ],
+              "path": [
+                "v1",
+                "convert",
+                "source"
+              ]
+            },
+            "description": "Converts a small synthetic HTML document supplied as base64. No file selection or outbound source fetch is needed.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"options\": {\n    \"pipeline\": \"standard\",\n    \"to_formats\": [\n      \"json\",\n      \"md\",\n      \"text\"\n    ],\n    \"image_export_mode\": \"placeholder\"\n  },\n  \"sources\": [\n    {\n      \"kind\": \"file\",\n      \"filename\": \"{{fixture_filename}}\",\n      \"base64_string\": \"{{fixture_base64}}\"\n    }\n  ],\n  \"target\": {\n    \"kind\": \"inbody\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const payload = pm.response.json();",
+                  "    pm.test('Conversion completed successfully', function () {",
+                  "        pm.expect(payload.status).to.equal('success');",
+                  "    });",
+                  "    pm.test('Conversion returned a document and processing time', function () {",
+                  "        pm.expect(payload.document).to.be.an('object');",
+                  "        pm.expect(payload.document.filename).to.be.a('string').and.not.empty;",
+                  "        pm.expect(payload.processing_time).to.be.a('number');",
+                  "    });",
+                  "}",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    const document = pm.response.json().document;",
+                  "    pm.test('Structured Docling JSON is present', function () {",
+                  "        pm.expect(document.json_content).to.be.an('object');",
+                  "        pm.expect(document.json_content.schema_name).to.equal('DoclingDocument');",
+                  "    });",
+                  "    pm.test('Markdown is present', function () {",
+                  "        pm.expect(document.md_content).to.be.a('string').and.not.empty;",
+                  "    });",
+                  "}",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    const document = pm.response.json().document;",
+                  "    const expected = pm.variables.get('fixture_expected_text');",
+                  "    pm.test('Expected fixture text survives conversion', function () {",
+                  "        pm.expect(document.md_content).to.include(expected);",
+                  "        pm.expect(JSON.stringify(document.json_content)).to.include(expected);",
+                  "    });",
+                  "}",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Plain text is present', function () {",
+                  "        pm.expect(pm.response.json().document.text_content).to.include(pm.variables.get('fixture_expected_text'));",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "5c270f50-d7c4-5f7b-ba98-bacf743a6601",
+          "name": "Convert HTTP Source - JSON and Markdown",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{docling_base_url}}/v1/convert/source",
+              "host": [
+                "{{docling_base_url}}"
+              ],
+              "path": [
+                "v1",
+                "convert",
+                "source"
+              ]
+            },
+            "description": "Set source_url and enable_http_source_requests. The server fetches the document using its own network permissions.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"options\": {\n    \"pipeline\": \"standard\",\n    \"to_formats\": [\n      \"json\",\n      \"md\"\n    ],\n    \"image_export_mode\": \"placeholder\"\n  },\n  \"sources\": [\n    {\n      \"kind\": \"http\",\n      \"url\": \"{{source_url}}\"\n    }\n  ],\n  \"target\": {\n    \"kind\": \"inbody\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (String(pm.variables.get(\"enable_http_source_requests\")).toLowerCase() !== 'true') { pm.execution.skipRequest(); }",
+                  "if (!/^https?:\\/\\//i.test(String(pm.variables.get('source_url') || ''))) {",
+                  "    throw new Error('Set source_url to an HTTP(S) document URL.');",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const payload = pm.response.json();",
+                  "    pm.test('Conversion completed successfully', function () {",
+                  "        pm.expect(payload.status).to.equal('success');",
+                  "    });",
+                  "    pm.test('Conversion returned a document and processing time', function () {",
+                  "        pm.expect(payload.document).to.be.an('object');",
+                  "        pm.expect(payload.document.filename).to.be.a('string').and.not.empty;",
+                  "        pm.expect(payload.processing_time).to.be.a('number');",
+                  "    });",
+                  "}",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    const document = pm.response.json().document;",
+                  "    pm.test('Structured Docling JSON is present', function () {",
+                  "        pm.expect(document.json_content).to.be.an('object');",
+                  "        pm.expect(document.json_content.schema_name).to.equal('DoclingDocument');",
+                  "    });",
+                  "    pm.test('Markdown is present', function () {",
+                  "        pm.expect(document.md_content).to.be.a('string').and.not.empty;",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "17a3d854-e111-575b-93bf-40c4c45bdf47",
+          "name": "Convert Uploaded File - JSON and Markdown",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{docling_base_url}}/v1/convert/file",
+              "host": [
+                "{{docling_base_url}}"
+              ],
+              "path": [
+                "v1",
+                "convert",
+                "file"
+              ]
+            },
+            "description": "Enable file uploads and select a PDF, image or supported office document. Repeated to_formats rows send an array; do not manually set multipart Content-Type.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": null,
+                  "description": "Select a local document with the Postman file picker."
+                },
+                {
+                  "key": "target_type",
+                  "value": "inbody",
+                  "type": "text"
+                },
+                {
+                  "key": "pipeline",
+                  "value": "standard",
+                  "type": "text"
+                },
+                {
+                  "key": "to_formats",
+                  "value": "json",
+                  "type": "text"
+                },
+                {
+                  "key": "to_formats",
+                  "value": "md",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (String(pm.variables.get(\"enable_file_upload_requests\")).toLowerCase() !== 'true') { pm.execution.skipRequest(); }",
+                  "",
+                  "const selectedFiles = pm.request.body.formdata.all().filter(function (field) {",
+                  "    return field.type === 'file' && !field.disabled;",
+                  "});",
+                  "if (!selectedFiles.some(function (field) {",
+                  "    const paths = Array.isArray(field.src) ? field.src : [field.src];",
+                  "    return paths.some(function (path) { return typeof path === 'string' && path.trim().length > 0; });",
+                  "})) {",
+                  "    throw new Error('Select a local file in Body > form-data > files before sending this request.');",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const payload = pm.response.json();",
+                  "    pm.test('Conversion completed successfully', function () {",
+                  "        pm.expect(payload.status).to.equal('success');",
+                  "    });",
+                  "    pm.test('Conversion returned a document and processing time', function () {",
+                  "        pm.expect(payload.document).to.be.an('object');",
+                  "        pm.expect(payload.document.filename).to.be.a('string').and.not.empty;",
+                  "        pm.expect(payload.processing_time).to.be.a('number');",
+                  "    });",
+                  "}",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    const document = pm.response.json().document;",
+                  "    pm.test('Structured Docling JSON is present', function () {",
+                  "        pm.expect(document.json_content).to.be.an('object');",
+                  "        pm.expect(document.json_content.schema_name).to.equal('DoclingDocument');",
+                  "    });",
+                  "    pm.test('Markdown is present', function () {",
+                  "        pm.expect(document.md_content).to.be.a('string').and.not.empty;",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "d267833a-9f80-5c3c-a0db-f7edf25d0fa3",
+          "name": "Convert Uploaded Scan - Forced OCR",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{docling_base_url}}/v1/convert/file",
+              "host": [
+                "{{docling_base_url}}"
+              ],
+              "path": [
+                "v1",
+                "convert",
+                "file"
+              ]
+            },
+            "description": "Select a scanned PDF/image. Uses the admin-configured OCR preset and forces OCR. Qualify the required languages and assets separately.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": null,
+                  "description": "Select a local document with the Postman file picker."
+                },
+                {
+                  "key": "target_type",
+                  "value": "inbody",
+                  "type": "text"
+                },
+                {
+                  "key": "pipeline",
+                  "value": "standard",
+                  "type": "text"
+                },
+                {
+                  "key": "from_formats",
+                  "value": "pdf",
+                  "type": "text"
+                },
+                {
+                  "key": "from_formats",
+                  "value": "image",
+                  "type": "text"
+                },
+                {
+                  "key": "to_formats",
+                  "value": "json",
+                  "type": "text"
+                },
+                {
+                  "key": "to_formats",
+                  "value": "md",
+                  "type": "text"
+                },
+                {
+                  "key": "do_ocr",
+                  "value": "true",
+                  "type": "text"
+                },
+                {
+                  "key": "force_ocr",
+                  "value": "true",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (String(pm.variables.get(\"enable_file_upload_requests\")).toLowerCase() !== 'true') { pm.execution.skipRequest(); }",
+                  "",
+                  "const selectedFiles = pm.request.body.formdata.all().filter(function (field) {",
+                  "    return field.type === 'file' && !field.disabled;",
+                  "});",
+                  "if (!selectedFiles.some(function (field) {",
+                  "    const paths = Array.isArray(field.src) ? field.src : [field.src];",
+                  "    return paths.some(function (path) { return typeof path === 'string' && path.trim().length > 0; });",
+                  "})) {",
+                  "    throw new Error('Select a local file in Body > form-data > files before sending this request.');",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const payload = pm.response.json();",
+                  "    pm.test('Conversion completed successfully', function () {",
+                  "        pm.expect(payload.status).to.equal('success');",
+                  "    });",
+                  "    pm.test('Conversion returned a document and processing time', function () {",
+                  "        pm.expect(payload.document).to.be.an('object');",
+                  "        pm.expect(payload.document.filename).to.be.a('string').and.not.empty;",
+                  "        pm.expect(payload.processing_time).to.be.a('number');",
+                  "    });",
+                  "}",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    const document = pm.response.json().document;",
+                  "    pm.test('Structured Docling JSON is present', function () {",
+                  "        pm.expect(document.json_content).to.be.an('object');",
+                  "        pm.expect(document.json_content.schema_name).to.equal('DoclingDocument');",
+                  "    });",
+                  "    pm.test('Markdown is present', function () {",
+                  "        pm.expect(document.md_content).to.be.a('string').and.not.empty;",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "3e2140e1-158d-5b38-8d78-97ead711bd77",
+          "name": "Convert Uploaded File - Referenced Assets ZIP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/zip"
+              }
+            ],
+            "url": {
+              "raw": "{{docling_base_url}}/v1/convert/file",
+              "host": [
+                "{{docling_base_url}}"
+              ],
+              "path": [
+                "v1",
+                "convert",
+                "file"
+              ]
+            },
+            "description": "Select a document. Returns a ZIP containing structured outputs and referenced images; use Send and Download to preserve the archive.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": null,
+                  "description": "Select a local document with the Postman file picker."
+                },
+                {
+                  "key": "pipeline",
+                  "value": "standard",
+                  "type": "text"
+                },
+                {
+                  "key": "to_formats",
+                  "value": "json",
+                  "type": "text"
+                },
+                {
+                  "key": "to_formats",
+                  "value": "md",
+                  "type": "text"
+                },
+                {
+                  "key": "to_formats",
+                  "value": "html",
+                  "type": "text"
+                },
+                {
+                  "key": "target_type",
+                  "value": "zip",
+                  "type": "text"
+                },
+                {
+                  "key": "image_export_mode",
+                  "value": "referenced",
+                  "type": "text"
+                },
+                {
+                  "key": "include_images",
+                  "value": "true",
+                  "type": "text"
+                },
+                {
+                  "key": "include_page_images",
+                  "value": "true",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (String(pm.variables.get(\"enable_file_upload_requests\")).toLowerCase() !== 'true') { pm.execution.skipRequest(); }",
+                  "",
+                  "const selectedFiles = pm.request.body.formdata.all().filter(function (field) {",
+                  "    return field.type === 'file' && !field.disabled;",
+                  "});",
+                  "if (!selectedFiles.some(function (field) {",
+                  "    const paths = Array.isArray(field.src) ? field.src : [field.src];",
+                  "    return paths.some(function (path) { return typeof path === 'string' && path.trim().length > 0; });",
+                  "})) {",
+                  "    throw new Error('Select a local file in Body > form-data > files before sending this request.');",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Response is a ZIP archive', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/zip');",
+                  "    pm.expect(pm.response.headers.get('Content-Disposition')).to.include('attachment');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Asynchronous Conversion - Built-in Fixture",
+      "description": "Run this folder in order: submit, bounded long-poll, fetch. Runner repeats polling automatically; manual Send requires repeated polling. Results can expire after fetching.",
+      "item": [
+        {
+          "id": "4656cb43-b93b-529d-880f-57bdb407ff67",
+          "name": "Fixture Async - Submit",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{docling_base_url}}/v1/convert/source/async",
+              "host": [
+                "{{docling_base_url}}"
+              ],
+              "path": [
+                "v1",
+                "convert",
+                "source",
+                "async"
+              ]
+            },
+            "description": "Creates one asynchronous conversion and captures docling_task_id. Submission alone does not prove conversion success.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"options\": {\n    \"pipeline\": \"standard\",\n    \"to_formats\": [\n      \"json\",\n      \"md\",\n      \"text\"\n    ],\n    \"image_export_mode\": \"placeholder\"\n  },\n  \"sources\": [\n    {\n      \"kind\": \"file\",\n      \"filename\": \"{{fixture_filename}}\",\n      \"base64_string\": \"{{fixture_base64}}\"\n    }\n  ],\n  \"target\": {\n    \"kind\": \"inbody\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.unset('docling_task_id');",
+                  "pm.collectionVariables.unset('docling_task_status');",
+                  "pm.collectionVariables.set('docling_poll_attempt', '0');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "    const payload = pm.response.json();",
+                  "    pm.test('Task submission returned a task ID', function () {",
+                  "        pm.expect(payload.task_id).to.be.a('string').and.not.empty;",
+                  "    });",
+                  "    pm.test('Task submission returned a known status', function () {",
+                  "        pm.expect(payload.task_status).to.be.oneOf(['pending', 'started', 'failure', 'success', 'partial_success', 'skipped']);",
+                  "    });",
+                  "    if (typeof payload.task_id === 'string' && payload.task_id.length > 0) {",
+                  "        pm.collectionVariables.set('docling_task_id', payload.task_id);",
+                  "        pm.collectionVariables.set('docling_task_status', payload.task_status);",
+                  "    } else {",
+                  "        pm.execution.setNextRequest(null);",
+                  "    }",
+                  "} else {",
+                  "    pm.execution.setNextRequest(null);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "61bca316-971a-530a-9da1-10f7f2efe0cb",
+          "name": "Fixture Async - Poll Until Terminal",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{docling_base_url}}/v1/status/poll/{{docling_task_id}}?wait={{poll_wait_seconds}}",
+              "host": [
+                "{{docling_base_url}}"
+              ],
+              "path": [
+                "v1",
+                "status",
+                "poll",
+                "{{docling_task_id}}"
+              ],
+              "query": [
+                {
+                  "key": "wait",
+                  "value": "{{poll_wait_seconds}}"
+                }
+              ]
+            },
+            "description": "Waits for status updates. Collection Runner loops at most poll_max_attempts, with poll_wait_seconds of server-side waiting per attempt."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('docling_task_id')) {",
+                  "    throw new Error('Submit an asynchronous conversion first.');",
+                  "}",
+                  "const wait = Number(pm.variables.get('poll_wait_seconds'));",
+                  "const maximum = Number(pm.variables.get('poll_max_attempts'));",
+                  "if (!Number.isFinite(wait) || wait < 0 || wait > 30 ||",
+                  "    !Number.isInteger(maximum) || maximum < 1 || maximum > 1000) {",
+                  "    throw new Error('Use poll_wait_seconds between 0 and 30 and poll_max_attempts between 1 and 1000.');",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code !== 200) {",
+                  "    pm.execution.setNextRequest(null);",
+                  "} else {",
+                  "    const payload = pm.response.json();",
+                  "    const terminal = ['success', 'partial_success', 'failure', 'skipped'];",
+                  "    const known = ['pending', 'started'].concat(terminal);",
+                  "    pm.test('Polling returned the submitted task', function () {",
+                  "        pm.expect(payload.task_id).to.equal(pm.collectionVariables.get('docling_task_id'));",
+                  "    });",
+                  "    pm.test('Polling returned a known status', function () {",
+                  "        pm.expect(payload.task_status).to.be.oneOf(known);",
+                  "    });",
+                  "    pm.collectionVariables.set('docling_task_status', payload.task_status);",
+                  "    const attempt = Number(pm.collectionVariables.get('docling_poll_attempt') || 0) + 1;",
+                  "    pm.collectionVariables.set('docling_poll_attempt', String(attempt));",
+                  "    const maximum = Number(pm.variables.get('poll_max_attempts'));",
+                  "    if (payload.task_id !== pm.collectionVariables.get('docling_task_id')) {",
+                  "        pm.execution.setNextRequest(null);",
+                  "    } else if (terminal.indexOf(payload.task_status) >= 0) {",
+                  "        pm.test('Asynchronous conversion completed successfully', function () {",
+                  "            pm.expect(payload.task_status).to.equal('success');",
+                  "        });",
+                  "    } else if (known.indexOf(payload.task_status) < 0 || attempt >= maximum) {",
+                  "        pm.test('Polling completed within its configured bound', function () {",
+                  "            throw new Error('No terminal task status within the polling bound.');",
+                  "        });",
+                  "        pm.execution.setNextRequest(null);",
+                  "    } else {",
+                  "        pm.execution.setNextRequest(pm.info.requestId);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "11cf9466-447f-5325-a78e-55254f008342",
+          "name": "Fixture Async - Fetch Result",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{docling_base_url}}/v1/result/{{docling_task_id}}",
+              "host": [
+                "{{docling_base_url}}"
+              ],
+              "path": [
+                "v1",
+                "result",
+                "{{docling_task_id}}"
+              ]
+            },
+            "description": "Fetch only after terminal status. Save the response; single-use result retention can remove it after this fetch."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('docling_task_id')) {",
+                  "    throw new Error('Submit an asynchronous conversion first.');",
+                  "}",
+                  "if (['success', 'partial_success', 'failure', 'skipped'].indexOf(",
+                  "        pm.collectionVariables.get('docling_task_status')) < 0) {",
+                  "    throw new Error('Poll until the task reaches a terminal status before fetching its result.');",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const payload = pm.response.json();",
+                  "    pm.test('Conversion completed successfully', function () {",
+                  "        pm.expect(payload.status).to.equal('success');",
+                  "    });",
+                  "    pm.test('Conversion returned a document and processing time', function () {",
+                  "        pm.expect(payload.document).to.be.an('object');",
+                  "        pm.expect(payload.document.filename).to.be.a('string').and.not.empty;",
+                  "        pm.expect(payload.processing_time).to.be.a('number');",
+                  "    });",
+                  "}",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    const document = pm.response.json().document;",
+                  "    pm.test('Structured Docling JSON is present', function () {",
+                  "        pm.expect(document.json_content).to.be.an('object');",
+                  "        pm.expect(document.json_content.schema_name).to.equal('DoclingDocument');",
+                  "    });",
+                  "    pm.test('Markdown is present', function () {",
+                  "        pm.expect(document.md_content).to.be.a('string').and.not.empty;",
+                  "    });",
+                  "}",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    const document = pm.response.json().document;",
+                  "    const expected = pm.variables.get('fixture_expected_text');",
+                  "    pm.test('Expected fixture text survives conversion', function () {",
+                  "        pm.expect(document.md_content).to.include(expected);",
+                  "        pm.expect(JSON.stringify(document.json_content)).to.include(expected);",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Asynchronous Conversion - File Upload",
+      "description": "Run this folder in order: submit, bounded long-poll, fetch. Runner repeats polling automatically; manual Send requires repeated polling. Results can expire after fetching.",
+      "item": [
+        {
+          "id": "77ad67d6-baaf-5a69-8df0-e15de3b9cd0b",
+          "name": "Upload Async - Submit",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{docling_base_url}}/v1/convert/file/async",
+              "host": [
+                "{{docling_base_url}}"
+              ],
+              "path": [
+                "v1",
+                "convert",
+                "file",
+                "async"
+              ]
+            },
+            "description": "Creates one asynchronous conversion and captures docling_task_id. Submission alone does not prove conversion success.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": null,
+                  "description": "Select a local document with the Postman file picker."
+                },
+                {
+                  "key": "target_type",
+                  "value": "inbody",
+                  "type": "text"
+                },
+                {
+                  "key": "pipeline",
+                  "value": "standard",
+                  "type": "text"
+                },
+                {
+                  "key": "to_formats",
+                  "value": "json",
+                  "type": "text"
+                },
+                {
+                  "key": "to_formats",
+                  "value": "md",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (String(pm.variables.get(\"enable_file_upload_requests\")).toLowerCase() !== 'true') { pm.execution.skipRequest(); }",
+                  "",
+                  "const selectedFiles = pm.request.body.formdata.all().filter(function (field) {",
+                  "    return field.type === 'file' && !field.disabled;",
+                  "});",
+                  "if (!selectedFiles.some(function (field) {",
+                  "    const paths = Array.isArray(field.src) ? field.src : [field.src];",
+                  "    return paths.some(function (path) { return typeof path === 'string' && path.trim().length > 0; });",
+                  "})) {",
+                  "    throw new Error('Select a local file in Body > form-data > files before sending this request.');",
+                  "}",
+                  "",
+                  "",
+                  "pm.collectionVariables.unset('docling_task_id');",
+                  "pm.collectionVariables.unset('docling_task_status');",
+                  "pm.collectionVariables.set('docling_poll_attempt', '0');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "    const payload = pm.response.json();",
+                  "    pm.test('Task submission returned a task ID', function () {",
+                  "        pm.expect(payload.task_id).to.be.a('string').and.not.empty;",
+                  "    });",
+                  "    pm.test('Task submission returned a known status', function () {",
+                  "        pm.expect(payload.task_status).to.be.oneOf(['pending', 'started', 'failure', 'success', 'partial_success', 'skipped']);",
+                  "    });",
+                  "    if (typeof payload.task_id === 'string' && payload.task_id.length > 0) {",
+                  "        pm.collectionVariables.set('docling_task_id', payload.task_id);",
+                  "        pm.collectionVariables.set('docling_task_status', payload.task_status);",
+                  "    } else {",
+                  "        pm.execution.setNextRequest(null);",
+                  "    }",
+                  "} else {",
+                  "    pm.execution.setNextRequest(null);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "2d61ba65-eb06-596b-b4d9-131138be42bc",
+          "name": "Upload Async - Poll Until Terminal",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{docling_base_url}}/v1/status/poll/{{docling_task_id}}?wait={{poll_wait_seconds}}",
+              "host": [
+                "{{docling_base_url}}"
+              ],
+              "path": [
+                "v1",
+                "status",
+                "poll",
+                "{{docling_task_id}}"
+              ],
+              "query": [
+                {
+                  "key": "wait",
+                  "value": "{{poll_wait_seconds}}"
+                }
+              ]
+            },
+            "description": "Waits for status updates. Collection Runner loops at most poll_max_attempts, with poll_wait_seconds of server-side waiting per attempt."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (String(pm.variables.get(\"enable_file_upload_requests\")).toLowerCase() !== 'true') { pm.execution.skipRequest(); }",
+                  "",
+                  "if (!pm.collectionVariables.get('docling_task_id')) {",
+                  "    throw new Error('Submit an asynchronous conversion first.');",
+                  "}",
+                  "const wait = Number(pm.variables.get('poll_wait_seconds'));",
+                  "const maximum = Number(pm.variables.get('poll_max_attempts'));",
+                  "if (!Number.isFinite(wait) || wait < 0 || wait > 30 ||",
+                  "    !Number.isInteger(maximum) || maximum < 1 || maximum > 1000) {",
+                  "    throw new Error('Use poll_wait_seconds between 0 and 30 and poll_max_attempts between 1 and 1000.');",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code !== 200) {",
+                  "    pm.execution.setNextRequest(null);",
+                  "} else {",
+                  "    const payload = pm.response.json();",
+                  "    const terminal = ['success', 'partial_success', 'failure', 'skipped'];",
+                  "    const known = ['pending', 'started'].concat(terminal);",
+                  "    pm.test('Polling returned the submitted task', function () {",
+                  "        pm.expect(payload.task_id).to.equal(pm.collectionVariables.get('docling_task_id'));",
+                  "    });",
+                  "    pm.test('Polling returned a known status', function () {",
+                  "        pm.expect(payload.task_status).to.be.oneOf(known);",
+                  "    });",
+                  "    pm.collectionVariables.set('docling_task_status', payload.task_status);",
+                  "    const attempt = Number(pm.collectionVariables.get('docling_poll_attempt') || 0) + 1;",
+                  "    pm.collectionVariables.set('docling_poll_attempt', String(attempt));",
+                  "    const maximum = Number(pm.variables.get('poll_max_attempts'));",
+                  "    if (payload.task_id !== pm.collectionVariables.get('docling_task_id')) {",
+                  "        pm.execution.setNextRequest(null);",
+                  "    } else if (terminal.indexOf(payload.task_status) >= 0) {",
+                  "        pm.test('Asynchronous conversion completed successfully', function () {",
+                  "            pm.expect(payload.task_status).to.equal('success');",
+                  "        });",
+                  "    } else if (known.indexOf(payload.task_status) < 0 || attempt >= maximum) {",
+                  "        pm.test('Polling completed within its configured bound', function () {",
+                  "            throw new Error('No terminal task status within the polling bound.');",
+                  "        });",
+                  "        pm.execution.setNextRequest(null);",
+                  "    } else {",
+                  "        pm.execution.setNextRequest(pm.info.requestId);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "b201b83f-3813-54d8-864f-c29534441d73",
+          "name": "Upload Async - Fetch Result",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{docling_base_url}}/v1/result/{{docling_task_id}}",
+              "host": [
+                "{{docling_base_url}}"
+              ],
+              "path": [
+                "v1",
+                "result",
+                "{{docling_task_id}}"
+              ]
+            },
+            "description": "Fetch only after terminal status. Save the response; single-use result retention can remove it after this fetch."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (String(pm.variables.get(\"enable_file_upload_requests\")).toLowerCase() !== 'true') { pm.execution.skipRequest(); }",
+                  "",
+                  "if (!pm.collectionVariables.get('docling_task_id')) {",
+                  "    throw new Error('Submit an asynchronous conversion first.');",
+                  "}",
+                  "if (['success', 'partial_success', 'failure', 'skipped'].indexOf(",
+                  "        pm.collectionVariables.get('docling_task_status')) < 0) {",
+                  "    throw new Error('Poll until the task reaches a terminal status before fetching its result.');",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const payload = pm.response.json();",
+                  "    pm.test('Conversion completed successfully', function () {",
+                  "        pm.expect(payload.status).to.equal('success');",
+                  "    });",
+                  "    pm.test('Conversion returned a document and processing time', function () {",
+                  "        pm.expect(payload.document).to.be.an('object');",
+                  "        pm.expect(payload.document.filename).to.be.a('string').and.not.empty;",
+                  "        pm.expect(payload.processing_time).to.be.a('number');",
+                  "    });",
+                  "}",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    const document = pm.response.json().document;",
+                  "    pm.test('Structured Docling JSON is present', function () {",
+                  "        pm.expect(document.json_content).to.be.an('object');",
+                  "        pm.expect(document.json_content.schema_name).to.equal('DoclingDocument');",
+                  "    });",
+                  "    pm.test('Markdown is present', function () {",
+                  "        pm.expect(document.md_content).to.be.a('string').and.not.empty;",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "DocLang and DCLX",
+      "description": "DocLang export/import and DCLX packaging checks. XML presence and round-trip text are smoke checks; XSD/Schematron and full fidelity require the planned FDI validator.",
+      "item": [
+        {
+          "id": "38b3bf9f-c457-5484-ade4-650378667586",
+          "name": "Export Fixture - DocLang XML",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{docling_base_url}}/v1/convert/source",
+              "host": [
+                "{{docling_base_url}}"
+              ],
+              "path": [
+                "v1",
+                "convert",
+                "source"
+              ]
+            },
+            "description": "Exports the synthetic fixture as native JSON, Markdown and DocLang XML. Saves only this small synthetic XML for the next request.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"options\": {\n    \"pipeline\": \"standard\",\n    \"to_formats\": [\n      \"json\",\n      \"md\",\n      \"doclang\"\n    ],\n    \"image_export_mode\": \"placeholder\"\n  },\n  \"sources\": [\n    {\n      \"kind\": \"file\",\n      \"filename\": \"{{fixture_filename}}\",\n      \"base64_string\": \"{{fixture_base64}}\"\n    }\n  ],\n  \"target\": {\n    \"kind\": \"inbody\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (String(pm.variables.get(\"enable_doclang_requests\")).toLowerCase() !== 'true') { pm.execution.skipRequest(); }",
+                  "pm.collectionVariables.unset('docling_fixture_xml');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const payload = pm.response.json();",
+                  "    pm.test('Conversion completed successfully', function () {",
+                  "        pm.expect(payload.status).to.equal('success');",
+                  "    });",
+                  "    pm.test('Conversion returned a document and processing time', function () {",
+                  "        pm.expect(payload.document).to.be.an('object');",
+                  "        pm.expect(payload.document.filename).to.be.a('string').and.not.empty;",
+                  "        pm.expect(payload.processing_time).to.be.a('number');",
+                  "    });",
+                  "}",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    const document = pm.response.json().document;",
+                  "    pm.test('Structured Docling JSON is present', function () {",
+                  "        pm.expect(document.json_content).to.be.an('object');",
+                  "        pm.expect(document.json_content.schema_name).to.equal('DoclingDocument');",
+                  "    });",
+                  "    pm.test('Markdown is present', function () {",
+                  "        pm.expect(document.md_content).to.be.a('string').and.not.empty;",
+                  "    });",
+                  "}",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    const document = pm.response.json().document;",
+                  "    const expected = pm.variables.get('fixture_expected_text');",
+                  "    pm.test('Expected fixture text survives conversion', function () {",
+                  "        pm.expect(document.md_content).to.include(expected);",
+                  "        pm.expect(JSON.stringify(document.json_content)).to.include(expected);",
+                  "    });",
+                  "}",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    const xml = pm.response.json().document.doclang_content;",
+                  "    pm.test('DocLang XML content is present', function () {",
+                  "        pm.expect(xml).to.be.a('string').and.not.empty;",
+                  "        pm.expect(xml.trim()).to.match(/^</);",
+                  "    });",
+                  "    if (typeof xml === 'string' && xml.length > 0 && xml.length <= 1048576) {",
+                  "        pm.collectionVariables.set('docling_fixture_xml', xml);",
+                  "    } else {",
+                  "        pm.collectionVariables.unset('docling_fixture_xml');",
+                  "        pm.execution.setNextRequest(null);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "55282d6f-410e-5dc5-8598-764348678b2b",
+          "name": "Import Fixture - DocLang XML Round Trip",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{docling_base_url}}/v1/convert/source",
+              "host": [
+                "{{docling_base_url}}"
+              ],
+              "path": [
+                "v1",
+                "convert",
+                "source"
+              ]
+            },
+            "description": "Imports the captured synthetic DocLang XML and checks that expected text survives. This is not schema validation.",
+            "body": {
+              "mode": "raw",
+              "raw": "{{doclang_roundtrip_request}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (String(pm.variables.get(\"enable_doclang_requests\")).toLowerCase() !== 'true') { pm.execution.skipRequest(); }",
+                  "const xml = pm.collectionVariables.get('docling_fixture_xml');",
+                  "if (typeof xml !== 'string' || !xml.length || xml.length > 1048576) {",
+                  "    throw new Error('Run Export Fixture - DocLang XML first; the fixture XML must be at most 1MiB.');",
+                  "}",
+                  "const BufferClass = require('buffer').Buffer;",
+                  "pm.variables.set('doclang_roundtrip_request', JSON.stringify({",
+                  "    options: {pipeline: 'standard', from_formats: ['xml_doclang'], to_formats: ['json', 'md']},",
+                  "    sources: [{kind: 'file', filename: 'forwardmeasure-docling-smoke.doclang.xml',",
+                  "               base64_string: BufferClass.from(xml, 'utf8').toString('base64')}],",
+                  "    target: {kind: 'inbody'}",
+                  "}));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const payload = pm.response.json();",
+                  "    pm.test('Conversion completed successfully', function () {",
+                  "        pm.expect(payload.status).to.equal('success');",
+                  "    });",
+                  "    pm.test('Conversion returned a document and processing time', function () {",
+                  "        pm.expect(payload.document).to.be.an('object');",
+                  "        pm.expect(payload.document.filename).to.be.a('string').and.not.empty;",
+                  "        pm.expect(payload.processing_time).to.be.a('number');",
+                  "    });",
+                  "}",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    const document = pm.response.json().document;",
+                  "    pm.test('Structured Docling JSON is present', function () {",
+                  "        pm.expect(document.json_content).to.be.an('object');",
+                  "        pm.expect(document.json_content.schema_name).to.equal('DoclingDocument');",
+                  "    });",
+                  "    pm.test('Markdown is present', function () {",
+                  "        pm.expect(document.md_content).to.be.a('string').and.not.empty;",
+                  "    });",
+                  "}",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    const document = pm.response.json().document;",
+                  "    const expected = pm.variables.get('fixture_expected_text');",
+                  "    pm.test('Expected fixture text survives conversion', function () {",
+                  "        pm.expect(document.md_content).to.include(expected);",
+                  "        pm.expect(JSON.stringify(document.json_content)).to.include(expected);",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "8a487305-f248-581d-9ff0-47f9d8f37ea8",
+          "name": "Export Fixture - DCLX and JSON ZIP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/zip"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{docling_base_url}}/v1/convert/source",
+              "host": [
+                "{{docling_base_url}}"
+              ],
+              "path": [
+                "v1",
+                "convert",
+                "source"
+              ]
+            },
+            "description": "Returns an outer ZIP containing the DCLX export and native JSON/DocLang files. Use Send and Download, then extract the .dclx member for import.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"options\": {\n    \"pipeline\": \"standard\",\n    \"to_formats\": [\n      \"dclx\",\n      \"json\",\n      \"doclang\"\n    ],\n    \"image_export_mode\": \"placeholder\"\n  },\n  \"sources\": [\n    {\n      \"kind\": \"file\",\n      \"filename\": \"{{fixture_filename}}\",\n      \"base64_string\": \"{{fixture_base64}}\"\n    }\n  ],\n  \"target\": {\n    \"kind\": \"zip\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (String(pm.variables.get(\"enable_doclang_requests\")).toLowerCase() !== 'true') { pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Response is a ZIP archive', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/zip');",
+                  "    pm.expect(pm.response.headers.get('Content-Disposition')).to.include('attachment');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "a63d2826-6a9a-51a9-ad31-e04022fc855a",
+          "name": "Import Uploaded DCLX - JSON and Markdown",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{docling_base_url}}/v1/convert/file",
+              "host": [
+                "{{docling_base_url}}"
+              ],
+              "path": [
+                "v1",
+                "convert",
+                "file"
+              ]
+            },
+            "description": "Select a .dclx member extracted from the outer export ZIP, not the outer ZIP itself.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": null,
+                  "description": "Select a local document with the Postman file picker."
+                },
+                {
+                  "key": "target_type",
+                  "value": "inbody",
+                  "type": "text"
+                },
+                {
+                  "key": "pipeline",
+                  "value": "standard",
+                  "type": "text"
+                },
+                {
+                  "key": "from_formats",
+                  "value": "dclx",
+                  "type": "text"
+                },
+                {
+                  "key": "to_formats",
+                  "value": "json",
+                  "type": "text"
+                },
+                {
+                  "key": "to_formats",
+                  "value": "md",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (String(pm.variables.get(\"enable_doclang_requests\")).toLowerCase() !== 'true') { pm.execution.skipRequest(); }",
+                  "if (String(pm.variables.get(\"enable_file_upload_requests\")).toLowerCase() !== 'true') { pm.execution.skipRequest(); }",
+                  "",
+                  "const selectedFiles = pm.request.body.formdata.all().filter(function (field) {",
+                  "    return field.type === 'file' && !field.disabled;",
+                  "});",
+                  "if (!selectedFiles.some(function (field) {",
+                  "    const paths = Array.isArray(field.src) ? field.src : [field.src];",
+                  "    return paths.some(function (path) { return typeof path === 'string' && path.trim().length > 0; });",
+                  "})) {",
+                  "    throw new Error('Select a local file in Body > form-data > files before sending this request.');",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const payload = pm.response.json();",
+                  "    pm.test('Conversion completed successfully', function () {",
+                  "        pm.expect(payload.status).to.equal('success');",
+                  "    });",
+                  "    pm.test('Conversion returned a document and processing time', function () {",
+                  "        pm.expect(payload.document).to.be.an('object');",
+                  "        pm.expect(payload.document.filename).to.be.a('string').and.not.empty;",
+                  "        pm.expect(payload.processing_time).to.be.a('number');",
+                  "    });",
+                  "}",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    const document = pm.response.json().document;",
+                  "    pm.test('Structured Docling JSON is present', function () {",
+                  "        pm.expect(document.json_content).to.be.an('object');",
+                  "        pm.expect(document.json_content.schema_name).to.equal('DoclingDocument');",
+                  "    });",
+                  "    pm.test('Markdown is present', function () {",
+                  "        pm.expect(document.md_content).to.be.a('string').and.not.empty;",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Chunking",
+      "description": "Hierarchical chunking of the fixture; hybrid chunking is opt-in because tokenizer assets require separate qualification.",
+      "item": [
+        {
+          "id": "2b17e6f1-8705-5702-a39e-384367fb97a6",
+          "name": "Chunk Fixture - Hierarchical",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{docling_base_url}}/v1/chunk/hierarchical/source",
+              "host": [
+                "{{docling_base_url}}"
+              ],
+              "path": [
+                "v1",
+                "chunk",
+                "hierarchical",
+                "source"
+              ]
+            },
+            "description": "Converts and chunks the built-in HTML fixture, including native converted documents.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"convert_options\": {\n    \"pipeline\": \"standard\",\n    \"to_formats\": [\n      \"json\",\n      \"md\"\n    ]\n  },\n  \"sources\": [\n    {\n      \"kind\": \"file\",\n      \"filename\": \"{{fixture_filename}}\",\n      \"base64_string\": \"{{fixture_base64}}\"\n    }\n  ],\n  \"include_converted_doc\": true,\n  \"chunking_options\": {\n    \"chunker\": \"hierarchical\",\n    \"include_raw_text\": true\n  },\n  \"target\": {\n    \"kind\": \"inbody\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const payload = pm.response.json();",
+                  "    pm.test('Chunking returned structured chunks', function () {",
+                  "        pm.expect(payload.chunks).to.be.an('array').and.not.empty;",
+                  "        payload.chunks.forEach(function (chunk) {",
+                  "            pm.expect(chunk.text).to.be.a('string');",
+                  "            pm.expect(chunk.doc_items).to.be.an('array');",
+                  "        });",
+                  "    });",
+                  "    pm.test('Converted documents are included', function () {",
+                  "        pm.expect(payload.documents).to.be.an('array').and.not.empty;",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "b3f472df-28b9-556a-af27-7ba201b99343",
+          "name": "Chunk Fixture - Hybrid (Optional)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{docling_base_url}}/v1/chunk/hybrid/source",
+              "host": [
+                "{{docling_base_url}}"
+              ],
+              "path": [
+                "v1",
+                "chunk",
+                "hybrid",
+                "source"
+              ]
+            },
+            "description": "Enable only after preparing and qualifying the admin-selected chunking tokenizer/preset. This request can require additional model assets.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"convert_options\": {\n    \"pipeline\": \"standard\",\n    \"to_formats\": [\n      \"json\",\n      \"md\"\n    ]\n  },\n  \"sources\": [\n    {\n      \"kind\": \"file\",\n      \"filename\": \"{{fixture_filename}}\",\n      \"base64_string\": \"{{fixture_base64}}\"\n    }\n  ],\n  \"include_converted_doc\": true,\n  \"chunking_options\": {\n    \"chunker\": \"hybrid\",\n    \"max_tokens\": 256,\n    \"merge_peers\": true\n  },\n  \"target\": {\n    \"kind\": \"inbody\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (String(pm.variables.get(\"enable_hybrid_chunking_request\")).toLowerCase() !== 'true') { pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const payload = pm.response.json();",
+                  "    pm.test('Chunking returned structured chunks', function () {",
+                  "        pm.expect(payload.chunks).to.be.an('array').and.not.empty;",
+                  "        payload.chunks.forEach(function (chunk) {",
+                  "            pm.expect(chunk.text).to.be.a('string');",
+                  "            pm.expect(chunk.doc_items).to.be.an('array');",
+                  "        });",
+                  "    });",
+                  "    pm.test('Converted documents are included', function () {",
+                  "        pm.expect(payload.documents).to.be.an('array').and.not.empty;",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Prepared VLM Profiles - Optional",
+      "description": "Use only against a prepared VLM deployment. Explicit request pipeline selection is required; the normal CPU/standard deployment does not prepare these VLM weights.",
+      "item": [
+        {
+          "id": "e3f0bc81-6cc0-5889-a080-ecd619b5ee6a",
+          "name": "Convert Uploaded File - Granite Docling 258M",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{docling_base_url}}/v1/convert/file",
+              "host": [
+                "{{docling_base_url}}"
+              ],
+              "path": [
+                "v1",
+                "convert",
+                "file"
+              ]
+            },
+            "description": "Requires the vlm-small profile with granite_docling assets and backend. Select a PDF/image; runs pipeline=vlm explicitly.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": null,
+                  "description": "Select a local document with the Postman file picker."
+                },
+                {
+                  "key": "target_type",
+                  "value": "inbody",
+                  "type": "text"
+                },
+                {
+                  "key": "from_formats",
+                  "value": "pdf",
+                  "type": "text"
+                },
+                {
+                  "key": "from_formats",
+                  "value": "image",
+                  "type": "text"
+                },
+                {
+                  "key": "to_formats",
+                  "value": "json",
+                  "type": "text"
+                },
+                {
+                  "key": "to_formats",
+                  "value": "md",
+                  "type": "text"
+                },
+                {
+                  "key": "pipeline",
+                  "value": "vlm",
+                  "type": "text"
+                },
+                {
+                  "key": "vlm_pipeline_preset",
+                  "value": "granite_docling",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (String(pm.variables.get(\"enable_vlm_requests\")).toLowerCase() !== 'true') { pm.execution.skipRequest(); }",
+                  "if (String(pm.variables.get(\"enable_file_upload_requests\")).toLowerCase() !== 'true') { pm.execution.skipRequest(); }",
+                  "",
+                  "const selectedFiles = pm.request.body.formdata.all().filter(function (field) {",
+                  "    return field.type === 'file' && !field.disabled;",
+                  "});",
+                  "if (!selectedFiles.some(function (field) {",
+                  "    const paths = Array.isArray(field.src) ? field.src : [field.src];",
+                  "    return paths.some(function (path) { return typeof path === 'string' && path.trim().length > 0; });",
+                  "})) {",
+                  "    throw new Error('Select a local file in Body > form-data > files before sending this request.');",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const payload = pm.response.json();",
+                  "    pm.test('Conversion completed successfully', function () {",
+                  "        pm.expect(payload.status).to.equal('success');",
+                  "    });",
+                  "    pm.test('Conversion returned a document and processing time', function () {",
+                  "        pm.expect(payload.document).to.be.an('object');",
+                  "        pm.expect(payload.document.filename).to.be.a('string').and.not.empty;",
+                  "        pm.expect(payload.processing_time).to.be.a('number');",
+                  "    });",
+                  "}",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    const document = pm.response.json().document;",
+                  "    pm.test('Structured Docling JSON is present', function () {",
+                  "        pm.expect(document.json_content).to.be.an('object');",
+                  "        pm.expect(document.json_content.schema_name).to.equal('DoclingDocument');",
+                  "    });",
+                  "    pm.test('Markdown is present', function () {",
+                  "        pm.expect(document.md_content).to.be.a('string').and.not.empty;",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "5dad8627-f92c-5428-9b6b-0113bd416f1e",
+          "name": "Convert Uploaded File - Granite Vision 3.2",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{docling_base_url}}/v1/convert/file",
+              "host": [
+                "{{docling_base_url}}"
+              ],
+              "path": [
+                "v1",
+                "convert",
+                "file"
+              ]
+            },
+            "description": "Requires the GPU/vlm-large profile with granite_vision assets. This page-conversion preset uses Granite Vision 3.2; chart extraction is a separate model role.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": null,
+                  "description": "Select a local document with the Postman file picker."
+                },
+                {
+                  "key": "target_type",
+                  "value": "inbody",
+                  "type": "text"
+                },
+                {
+                  "key": "from_formats",
+                  "value": "pdf",
+                  "type": "text"
+                },
+                {
+                  "key": "from_formats",
+                  "value": "image",
+                  "type": "text"
+                },
+                {
+                  "key": "to_formats",
+                  "value": "json",
+                  "type": "text"
+                },
+                {
+                  "key": "to_formats",
+                  "value": "md",
+                  "type": "text"
+                },
+                {
+                  "key": "pipeline",
+                  "value": "vlm",
+                  "type": "text"
+                },
+                {
+                  "key": "vlm_pipeline_preset",
+                  "value": "granite_vision",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (String(pm.variables.get(\"enable_vlm_requests\")).toLowerCase() !== 'true') { pm.execution.skipRequest(); }",
+                  "if (String(pm.variables.get(\"enable_file_upload_requests\")).toLowerCase() !== 'true') { pm.execution.skipRequest(); }",
+                  "",
+                  "const selectedFiles = pm.request.body.formdata.all().filter(function (field) {",
+                  "    return field.type === 'file' && !field.disabled;",
+                  "});",
+                  "if (!selectedFiles.some(function (field) {",
+                  "    const paths = Array.isArray(field.src) ? field.src : [field.src];",
+                  "    return paths.some(function (path) { return typeof path === 'string' && path.trim().length > 0; });",
+                  "})) {",
+                  "    throw new Error('Select a local file in Body > form-data > files before sending this request.');",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const payload = pm.response.json();",
+                  "    pm.test('Conversion completed successfully', function () {",
+                  "        pm.expect(payload.status).to.equal('success');",
+                  "    });",
+                  "    pm.test('Conversion returned a document and processing time', function () {",
+                  "        pm.expect(payload.document).to.be.an('object');",
+                  "        pm.expect(payload.document.filename).to.be.a('string').and.not.empty;",
+                  "        pm.expect(payload.processing_time).to.be.a('number');",
+                  "    });",
+                  "}",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    const document = pm.response.json().document;",
+                  "    pm.test('Structured Docling JSON is present', function () {",
+                  "        pm.expect(document.json_content).to.be.an('object');",
+                  "        pm.expect(document.json_content.schema_name).to.equal('DoclingDocument');",
+                  "    });",
+                  "    pm.test('Markdown is present', function () {",
+                  "        pm.expect(document.md_content).to.be.a('string').and.not.empty;",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Capability Discovery - Optional",
+      "description": "Enable after upgrading to Serve 1.37.0 and keeping the capability endpoint enabled. Advertised presets still need actual inference qualification.",
+      "item": [
+        {
+          "id": "3bf539a6-fd50-536a-b6f0-a62d8399824a",
+          "name": "Capabilities - Formats Presets Limits",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{docling_base_url}}/v1/capabilities",
+              "host": [
+                "{{docling_base_url}}"
+              ],
+              "path": [
+                "v1",
+                "capabilities"
+              ]
+            },
+            "description": "Reads advertised stages, presets, formats, limits and API-key requirements. Not available on the observed 1.31.0 deployment.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (String(pm.variables.get(\"enable_capabilities_request\")).toLowerCase() !== 'true') { pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const payload = pm.response.json();",
+                  "    pm.test('Capability discovery exposes formats, stages and limits', function () {",
+                  "        pm.expect(payload.output_formats).to.be.an('array');",
+                  "        pm.expect(payload.stages).to.be.an('object');",
+                  "        pm.expect(payload.limits).to.be.an('object');",
+                  "        pm.expect(payload.features.api_key_required).to.be.a('boolean');",
+                  "    });",
+                  "    pm.collectionVariables.set('observed_docling_output_formats', JSON.stringify(payload.output_formats));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Authentication Checks - Optional",
+      "description": "Enable only when API-key authentication is required. Uses a nonexistent task ID, so checking credentials never submits a conversion.",
+      "item": [
+        {
+          "id": "1be10d2b-8357-50c5-86ae-5ad7633e0397",
+          "name": "Protected Task Status - Missing API Key",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{docling_base_url}}/v1/status/poll/postman-auth-check-nonexistent",
+              "host": [
+                "{{docling_base_url}}"
+              ],
+              "path": [
+                "v1",
+                "status",
+                "poll",
+                "postman-auth-check-nonexistent"
+              ]
+            },
+            "description": "Must return 401 on an API-key-protected deployment. A 404 indicates the request reached task lookup without being rejected for missing credentials.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (String(pm.variables.get(\"enable_authentication_checks\")).toLowerCase() !== 'true') { pm.execution.skipRequest(); }",
+                  "pm.variables.set('expected_http_status', 401);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "38d3a063-af4e-501c-b061-ef03844b5d0f",
+          "name": "Protected Task Status - Wrong API Key",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Api-Key",
+                "value": "postman-deliberately-invalid-api-key"
+              }
+            ],
+            "url": {
+              "raw": "{{docling_base_url}}/v1/status/poll/postman-auth-check-nonexistent",
+              "host": [
+                "{{docling_base_url}}"
+              ],
+              "path": [
+                "v1",
+                "status",
+                "poll",
+                "postman-auth-check-nonexistent"
+              ]
+            },
+            "description": "Must return 401 for a deliberately incorrect key.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (String(pm.variables.get(\"enable_authentication_checks\")).toLowerCase() !== 'true') { pm.execution.skipRequest(); }",
+                  "pm.variables.set('expected_http_status', 401);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

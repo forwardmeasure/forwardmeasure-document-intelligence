@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<doclang xmlns="https://www.doclang.ai/ns/v0">
+  <!-- Valid data table -->
+  <table>
+    <ched/>Product<ched/>Price<nl/>
+    <fcel/>Widget A<fcel/>$10.00<nl/>
+    <fcel/>Widget B<fcel/>$15.00<nl/>
+  </table>
+</doclang>

@@ -1,0 +1,10 @@
+{
+  "packages": {
+    "docling-core": "2.101.1",
+    "docling-jobkit": "3.8.2",
+    "docling-serve": "1.37.0",
+    "docling-slim": "2.138.0",
+    "fastapi": "0.141.1",
+    "pydantic": "2.14.1"
+  }
+}

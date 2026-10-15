@@ -1,0 +1,10 @@
+{
+  "upstream": "https://github.com/doclang-project/doclang/tree/v0.7.3",
+  "version": "0.7.3",
+  "files": {
+    "doclang.xsd": "e180e37730546aaa6e59f2e1d6df1a2a71c90dca2be9fa67ab34e6b97f7bf696",
+    "doclang.sch": "27fb5d705e4d821c346ae997d1123343bd5c3d630c2281e224a3c6ac1952efcc",
+    "schematron-transpiler.xsl": "4919b6acb405b89d002d3d348f18978e52ccdf7077c5af145d4b1da293dd66ad",
+    "LICENSE": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+  }
+}
