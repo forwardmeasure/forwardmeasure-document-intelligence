@@ -1,0 +1,39 @@
+# DocLang qualification corpus.
+# One entry per document. Schema: see ../../docs/doclang-qualification-fixtures.md
+#
+# The harness is green on an empty list. Entries without a golden are reported as
+# "pending" by Tier 1 until Tier 2 (live) produces one with --refresh.
+#
+# Worked example (commented until a real document exists):
+#
+# documents:
+#   - id: corporate-acquisition-agreement
+#     title: Synthetic one-page acquisition agreement (born-digital)
+#     class: born_digital_pdf
+#     source:
+#       file: sources/corporate-acquisition-agreement.pdf
+#       mediaType: application/pdf
+#       sha256: "<filled by --refresh>"
+#       sizeBytes: 0
+#     options:
+#       pipeline: STANDARD
+#       formats: [DOCLANG]
+#       doOcr: false
+#       imageMode: PLACEHOLDER
+#       enrichments: []
+#     expect:
+#       validation: valid
+#       structure:
+#         minHeadings: 1
+#         containsText:
+#           - "Acme Capital LLC"
+#           - "Beta Technologies Inc."
+#           - "$125 million"
+#           - "First National Bank"
+#         derivedFields: absent
+#         layers: [body]
+#     golden:
+#       doclang: golden/corporate-acquisition-agreement.doclang.xml
+#       doclangSha256: "<filled by --refresh>"
+
+documents: []
