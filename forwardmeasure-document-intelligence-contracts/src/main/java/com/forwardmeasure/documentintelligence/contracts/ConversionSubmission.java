@@ -14,6 +14,8 @@
  */
 package com.forwardmeasure.documentintelligence.contracts;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.forwardmeasure.documentintelligence.docling.generated.model.ConvertDocumentsOptions;
 import java.util.Objects;
 
 public record ConversionSubmission(
@@ -21,7 +23,7 @@ public record ConversionSubmission(
     TaskHandle task,
     ArtifactReference source,
     String filename,
-    ConversionOptions options,
+    ConvertDocumentsOptions options,
     ConversionContext context,
     String optionsSha256) {
   public ConversionSubmission {
@@ -32,5 +34,16 @@ public record ConversionSubmission(
     Objects.requireNonNull(filename, "filename");
     Objects.requireNonNull(options, "options");
     Objects.requireNonNull(context, "context");
+    options = copyOptions(options);
+  }
+
+  /** Generated options are mutable; durable submissions own a defensive snapshot. */
+  @Override
+  public ConvertDocumentsOptions options() {
+    return copyOptions(options);
+  }
+
+  private static ConvertDocumentsOptions copyOptions(ConvertDocumentsOptions options) {
+    return new ObjectMapper().convertValue(options, ConvertDocumentsOptions.class);
   }
 }

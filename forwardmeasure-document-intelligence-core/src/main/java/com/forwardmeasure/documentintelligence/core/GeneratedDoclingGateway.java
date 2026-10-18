@@ -16,13 +16,8 @@ package com.forwardmeasure.documentintelligence.core;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.forwardmeasure.documentintelligence.contracts.BinaryDocument;
-import com.forwardmeasure.documentintelligence.contracts.ConversionOptions;
 import com.forwardmeasure.documentintelligence.contracts.ConversionPayload;
-import com.forwardmeasure.documentintelligence.contracts.Enrichment;
-import com.forwardmeasure.documentintelligence.contracts.Pipeline;
 import com.forwardmeasure.documentintelligence.contracts.TaskHandle;
-import com.forwardmeasure.documentintelligence.contracts.TaskProgress;
-import com.forwardmeasure.documentintelligence.contracts.TaskState;
 import com.forwardmeasure.documentintelligence.docling.generated.ApiException;
 import com.forwardmeasure.documentintelligence.docling.generated.api.ChunkApi;
 import com.forwardmeasure.documentintelligence.docling.generated.api.ConvertApi;
@@ -33,7 +28,6 @@ import com.forwardmeasure.documentintelligence.docling.generated.model.ConvertDo
 import com.forwardmeasure.documentintelligence.docling.generated.model.ConvertSourcesRequest;
 import com.forwardmeasure.documentintelligence.docling.generated.model.HierarchicalChunkerOptionsDocumentsRequest;
 import com.forwardmeasure.documentintelligence.docling.generated.model.HybridChunkerOptionsDocumentsRequest;
-import com.forwardmeasure.documentintelligence.docling.generated.model.ImageRefMode;
 import com.forwardmeasure.documentintelligence.docling.generated.model.ProcessingPipeline;
 import com.forwardmeasure.documentintelligence.docling.generated.model.SourcesInner1;
 import com.forwardmeasure.documentintelligence.docling.generated.model.Target;
@@ -45,7 +39,6 @@ import java.nio.file.Files;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
 import org.apache.hc.client5.http.config.RequestConfig;
@@ -142,14 +135,15 @@ public final class GeneratedDoclingGateway implements DoclingGateway {
     return invoke(() -> health.capabilities(), false);
   }
 
-  private ConvertSourcesRequest request(BinaryDocument document, ConversionOptions options) {
+  private ConvertSourcesRequest request(BinaryDocument document, ConvertDocumentsOptions options) {
     if (document.size() > settings.maxInputBytes())
       throw new IllegalArgumentException("Input exceeds configured bound");
-    if (options.pipeline() == Pipeline.VLM
-        && !settings.preparedVlmPresets().contains(options.vlmPreset()))
+    DoclingOptions.validate(options);
+    if (options.getPipeline() == ProcessingPipeline.VLM
+        && !settings.preparedVlmPresets().contains(options.getVlmPipelinePreset()))
       throw new IllegalArgumentException(
           "VLM preset is not explicitly prepared by this deployment");
-    if (!settings.preparedEnrichments().containsAll(options.enrichments()))
+    if (!settings.preparedEnrichments().containsAll(DoclingOptions.enrichments(options)))
       throw new IllegalArgumentException(
           "Enrichment models are not explicitly prepared by this deployment");
     return new ConvertSourcesRequest()
@@ -159,68 +153,21 @@ public final class GeneratedDoclingGateway implements DoclingGateway {
                     .kind("file")
                     .filename(document.filename())
                     .base64String(Base64.getEncoder().encodeToString(document.content()))))
-        .options(vendorOptions(options))
-        .target(new Target().kind(options.archiveRequired() ? "zip" : "inbody"));
-  }
-
-  static ConvertDocumentsOptions vendorOptions(ConversionOptions value) {
-    var options =
-        new ConvertDocumentsOptions()
-            .toFormats(
-                value.formats().stream()
-                    .sorted()
-                    .map(
-                        f ->
-                            com.forwardmeasure.documentintelligence.docling.generated.model
-                                .OutputFormat.fromValue(f.wireValue()))
-                    .toList())
-            .pipeline(
-                ProcessingPipeline.fromValue(value.pipeline().name().toLowerCase(Locale.ROOT)))
-            .doOcr(value.doOcr())
-            .forceOcr(value.forceOcr())
-            .ocrLang(value.ocrLanguages())
-            .doTableStructure(true)
-            .imageExportMode(
-                ImageRefMode.fromValue(value.imageMode().name().toLowerCase(Locale.ROOT)))
-            .includePageImages(value.includePageImages())
-            .imagesScale(BigDecimal.valueOf(value.imageScale()))
-            .documentTimeout(BigDecimal.valueOf(value.documentTimeout().toMillis(), 3))
-            .pageRange(List.of((long) value.firstPage(), (long) value.lastPage()))
-            .doCodeEnrichment(value.enrichments().contains(Enrichment.CODE))
-            .doFormulaEnrichment(value.enrichments().contains(Enrichment.FORMULA))
-            .doPictureClassification(
-                value.enrichments().contains(Enrichment.PICTURE_CLASSIFICATION))
-            .doPictureDescription(value.enrichments().contains(Enrichment.PICTURE_DESCRIPTION))
-            .doChartExtraction(value.enrichments().contains(Enrichment.CHART_EXTRACTION));
-    if (value.vlmPreset() != null) options.vlmPipelinePreset(value.vlmPreset());
-    value
-        .stagePresets()
-        .forEach(
-            (stage, preset) -> {
-              switch (stage) {
-                case "layout_preset" -> options.layoutPreset(preset);
-                case "table_structure_preset" -> options.tableStructurePreset(preset);
-                case "code_formula_preset" -> options.codeFormulaPreset(preset);
-                case "picture_classification_preset" -> options.pictureClassificationPreset(preset);
-                case "picture_description_preset" -> options.pictureDescriptionPreset(preset);
-                case "ocr_preset" -> options.ocrPreset(preset);
-                default -> throw new IllegalArgumentException("Unknown stage");
-              }
-            });
-    return options;
+        .options(options)
+        .target(new Target().kind(DoclingOptions.archiveRequired(options) ? "zip" : "inbody"));
   }
 
   @Override
-  public ConversionPayload convert(BinaryDocument source, ConversionOptions options) {
+  public ConversionPayload convert(BinaryDocument source, ConvertDocumentsOptions options) {
     var request = request(source, options);
     return payload(invoke(() -> conversions.convertSource(request, null), true));
   }
 
   @Override
-  public TaskHandle submit(BinaryDocument source, ConversionOptions options) {
+  public TaskHandle submit(BinaryDocument source, ConvertDocumentsOptions options) {
     var request = request(source, options);
     var status = invoke(() -> conversions.submitSource(request, null), true);
-    return handle(status, options.archiveRequired());
+    return handle(status, DoclingOptions.archiveRequired(options));
   }
 
   private static TaskHandle handle(TaskStatusResponse status, boolean archive) {
@@ -231,7 +178,7 @@ public final class GeneratedDoclingGateway implements DoclingGateway {
   }
 
   @Override
-  public TaskProgress poll(TaskHandle task, Duration wait) {
+  public TaskStatusResponse poll(TaskHandle task, Duration wait) {
     if (wait.isNegative()
         || wait.compareTo(settings.readTimeout()) >= 0
         || wait.compareTo(Duration.ofSeconds(30)) > 0)
@@ -244,8 +191,7 @@ public final class GeneratedDoclingGateway implements DoclingGateway {
     if (!actual.taskId().equals(task.taskId()))
       throw new DocumentIntelligenceException(
           "TASK_ID_MISMATCH", 502, "Docling returned a different task identifier");
-    return new TaskProgress(
-        task, TaskState.fromWire(result.getTaskStatus().getValue()), result.getTaskPosition());
+    return result;
   }
 
   @Override
@@ -288,7 +234,7 @@ public final class GeneratedDoclingGateway implements DoclingGateway {
   }
 
   @Override
-  public TaskProgress await(TaskHandle task, Duration timeout, BooleanSupplier cancelled) {
+  public TaskStatusResponse await(TaskHandle task, Duration timeout, BooleanSupplier cancelled) {
     if (timeout.isNegative() || timeout.isZero() || timeout.compareTo(Duration.ofDays(1)) > 0)
       throw new IllegalArgumentException("Await timeout must be in (0,1 day]");
     long deadline = System.nanoTime() + timeout.toNanos();
@@ -310,7 +256,10 @@ public final class GeneratedDoclingGateway implements DoclingGateway {
             "Insufficient deadline budget for connection acquisition, connection and response"
                 + " timeouts");
       var progress = poll(task, Duration.ZERO);
-      if (progress.state().terminal()) return progress;
+      if (switch (progress.getTaskStatus()) {
+        case PENDING, STARTED -> false;
+        case SUCCESS, PARTIAL_SUCCESS, FAILURE, SKIPPED -> true;
+      }) return progress;
       try {
         Thread.sleep(Math.min(500, Math.max(1, (deadline - System.nanoTime()) / 1_000_000)));
       } catch (InterruptedException error) {

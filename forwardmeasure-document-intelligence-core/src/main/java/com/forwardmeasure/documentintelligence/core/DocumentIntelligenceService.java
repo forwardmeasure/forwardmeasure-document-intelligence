@@ -20,15 +20,15 @@ import com.forwardmeasure.documentintelligence.contracts.ArtifactReference;
 import com.forwardmeasure.documentintelligence.contracts.ArtifactRepository;
 import com.forwardmeasure.documentintelligence.contracts.BinaryDocument;
 import com.forwardmeasure.documentintelligence.contracts.ConversionContext;
-import com.forwardmeasure.documentintelligence.contracts.ConversionOptions;
 import com.forwardmeasure.documentintelligence.contracts.ConversionReceipt;
 import com.forwardmeasure.documentintelligence.contracts.ConversionSubmission;
 import com.forwardmeasure.documentintelligence.contracts.Digests;
 import com.forwardmeasure.documentintelligence.contracts.DocumentArtifactValidator;
-import com.forwardmeasure.documentintelligence.contracts.OutputFormat;
-import com.forwardmeasure.documentintelligence.contracts.TaskProgress;
-import com.forwardmeasure.documentintelligence.contracts.TaskState;
 import com.forwardmeasure.documentintelligence.contracts.ValidationReport;
+import com.forwardmeasure.documentintelligence.docling.generated.model.ConversionStatus;
+import com.forwardmeasure.documentintelligence.docling.generated.model.ConvertDocumentsOptions;
+import com.forwardmeasure.documentintelligence.docling.generated.model.OutputFormat;
+import com.forwardmeasure.documentintelligence.docling.generated.model.TaskStatusResponse;
 import com.forwardmeasure.documentintelligence.validation.BoundedZip;
 import com.forwardmeasure.documentintelligence.validation.ValidationLimits;
 import java.io.IOException;
@@ -36,6 +36,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 /**
@@ -43,6 +44,14 @@ import java.util.TreeMap;
  * workflow boundaries.
  */
 public final class DocumentIntelligenceService {
+  private static final Set<OutputFormat> ARTIFACT_FORMATS =
+      Set.of(
+          OutputFormat.JSON,
+          OutputFormat.MD,
+          OutputFormat.TEXT,
+          OutputFormat.HTML,
+          OutputFormat.DOCLANG,
+          OutputFormat.DCLX);
   private final DoclingGateway gateway;
   private final ArtifactRepository artifacts;
   private final DocumentArtifactValidator validator;
@@ -64,9 +73,15 @@ public final class DocumentIntelligenceService {
   public ConversionSubmission submit(
       ArtifactReference source,
       String filename,
-      ConversionOptions options,
+      ConvertDocumentsOptions options,
       ConversionContext context)
       throws IOException {
+    options = ProvenanceJson.decode(ProvenanceJson.encode(options), ConvertDocumentsOptions.class);
+    DoclingOptions.validate(options);
+    if (!ARTIFACT_FORMATS.containsAll(DoclingOptions.formats(options)))
+      throw new IllegalArgumentException(
+          "Artifact extraction supports JSON, MD, TEXT, HTML, DOCLANG and DCLX; use the gateway for"
+              + " other formats");
     String optionsHash = ProvenanceJson.optionsHash(options);
     String operationId = operationId(source, filename, optionsHash, context);
     byte[] bytes = artifacts.read(source, maxInputBytes);
@@ -95,22 +110,23 @@ public final class DocumentIntelligenceService {
                 context.runtime())));
   }
 
-  public TaskProgress poll(ConversionSubmission submission, Duration wait) {
+  public TaskStatusResponse poll(ConversionSubmission submission, Duration wait) {
     return gateway.poll(submission.task(), wait);
   }
 
   public ConversionReceipt retrieveAndStore(ConversionSubmission submission) throws IOException {
-    if (!ProvenanceJson.optionsHash(submission.options()).equals(submission.optionsSha256())
+    var options = submission.options();
+    if (!ProvenanceJson.optionsHash(options).equals(submission.optionsSha256())
         || !operationId(
                 submission.source(),
                 submission.filename(),
                 submission.optionsSha256(),
                 submission.context())
             .equals(submission.operationId())
-        || submission.task().archive() != submission.options().archiveRequired())
+        || submission.task().archive() != DoclingOptions.archiveRequired(options))
       throw new IOException("Submission fingerprint is inconsistent");
     var progress = poll(submission, Duration.ZERO);
-    if (progress.state() != TaskState.SUCCESS)
+    if (progress.getTaskStatus() != ConversionStatus.SUCCESS)
       throw new DocumentIntelligenceException(
           "TASK_NOT_SUCCESSFUL",
           409,
@@ -129,7 +145,7 @@ public final class DocumentIntelligenceService {
           String media = mediaType(member.getKey());
           contents.put(member.getKey(), new Content(member.getValue(), media));
         }
-      for (var format : submission.options().formats())
+      for (var format : DoclingOptions.formats(options))
         if (members.keySet().stream().noneMatch(n -> matches(n, format)))
           throw new IOException("Requested format is absent from the archive");
     } else {
@@ -140,15 +156,16 @@ public final class DocumentIntelligenceService {
       JsonNode document = result.path("document");
       if (!document.isObject()) throw new IOException("Conversion response has no document");
       contents.put("response.json", new Content(payload.content(), "application/json"));
-      for (var format : submission.options().formats()) {
+      for (var format : DoclingOptions.formats(options)) {
         String field =
             switch (format) {
               case JSON -> "json_content";
-              case MARKDOWN -> "md_content";
+              case MD -> "md_content";
               case TEXT -> "text_content";
               case HTML -> "html_content";
               case DOCLANG -> "doclang_content";
               case DCLX -> throw new IOException("DCLX requires an archive target");
+              default -> throw new IOException("Unsupported artifact output format: " + format);
             };
         JsonNode exported = document.get(field);
         if (exported == null
@@ -160,8 +177,8 @@ public final class DocumentIntelligenceService {
             format == OutputFormat.JSON
                 ? ProvenanceJson.encode(exported)
                 : exported.asText().getBytes(StandardCharsets.UTF_8);
-        String name = "document." + format.extension();
-        contents.put(name, new Content(bytes, format.mediaType()));
+        String name = "document." + extension(format);
+        contents.put(name, new Content(bytes, formatMediaType(format)));
         if (format == OutputFormat.DOCLANG) {
           var report = validator.validateDoclang(bytes);
           requireValid(report);
@@ -219,14 +236,40 @@ public final class DocumentIntelligenceService {
     return switch (format) {
       case DOCLANG -> lower.endsWith(".xml") || lower.endsWith(".dclg");
       case TEXT -> lower.endsWith(".txt") || lower.endsWith(".text");
-      default -> lower.endsWith("." + format.extension());
+      default -> lower.endsWith("." + extension(format));
     };
   }
 
   private static String mediaType(String name) {
     String n = name.toLowerCase(java.util.Locale.ROOT);
-    for (var format : OutputFormat.values()) if (matches(n, format)) return format.mediaType();
+    for (var format : ARTIFACT_FORMATS) if (matches(n, format)) return formatMediaType(format);
     return "application/octet-stream";
+  }
+
+  private static String extension(OutputFormat format) {
+    return switch (format) {
+      case JSON -> "json";
+      case MD -> "md";
+      case TEXT -> "txt";
+      case HTML -> "html";
+      case DOCLANG -> "dclg.xml";
+      case DCLX -> "dclx";
+      default ->
+          throw new IllegalArgumentException("Unsupported artifact output format: " + format);
+    };
+  }
+
+  private static String formatMediaType(OutputFormat format) {
+    return switch (format) {
+      case JSON -> "application/json";
+      case MD -> "text/markdown";
+      case TEXT -> "text/plain";
+      case HTML -> "text/html";
+      case DOCLANG -> "application/xml";
+      case DCLX -> "application/vnd.doclang.dclx+zip";
+      default ->
+          throw new IllegalArgumentException("Unsupported artifact output format: " + format);
+    };
   }
 
   private record Content(byte[] bytes, String mediaType) {}

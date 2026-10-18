@@ -23,15 +23,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.forwardmeasure.documentintelligence.contracts.BinaryDocument;
-import com.forwardmeasure.documentintelligence.contracts.ConversionOptions;
-import com.forwardmeasure.documentintelligence.contracts.OutputFormat;
+import com.forwardmeasure.documentintelligence.contracts.Enrichment;
 import com.forwardmeasure.documentintelligence.contracts.TaskHandle;
-import com.forwardmeasure.documentintelligence.contracts.TaskState;
+import com.forwardmeasure.documentintelligence.docling.generated.model.ConversionStatus;
+import com.forwardmeasure.documentintelligence.docling.generated.model.ConvertDocumentsOptions;
+import com.forwardmeasure.documentintelligence.docling.generated.model.OutputFormat;
+import com.forwardmeasure.documentintelligence.docling.generated.model.ProcessingPipeline;
 import com.sun.net.httpserver.HttpServer;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
@@ -123,7 +127,7 @@ class GeneratedDoclingGatewayTest {
     var document =
         new BinaryDocument(
             "café.html", "<html><body>café</body></html>".getBytes(StandardCharsets.UTF_8));
-    var response = gateway.convert(document, ConversionOptions.standard());
+    var response = gateway.convert(document, DoclingOptions.standard());
     assertArrayEquals(original, response.content());
     assertEquals("application/json", response.mediaType());
     var request = requests.getFirst();
@@ -142,6 +146,94 @@ class GeneratedDoclingGatewayTest {
   }
 
   @Test
+  void passesThroughGeneratedOptionsWithoutRestrictingThemToTheFormerSubset() throws Exception {
+    route = request -> json(200, "{}");
+    var options =
+        new ConvertDocumentsOptions()
+            .pipeline(ProcessingPipeline.NATIVE)
+            .toFormats(List.of(OutputFormat.YAML))
+            .mdCompactTables(true)
+            .doPdfHeadingHierarchy(true)
+            .includeImages(false)
+            .pageRange(List.of(1L, Long.MAX_VALUE))
+            .layoutCustomConfig(
+                Map.of("kind", "docling_layout_default", "keep_empty_clusters", true));
+    gateway.convert(new BinaryDocument("a.pdf", new byte[] {1}), options);
+    var tree = new ObjectMapper().readTree(requests.getFirst().body());
+    assertEquals("native", tree.at("/options/pipeline").asText());
+    assertEquals("yaml", tree.at("/options/to_formats/0").asText());
+    assertTrue(tree.at("/options/md_compact_tables").asBoolean());
+    assertTrue(tree.at("/options/do_pdf_heading_hierarchy").asBoolean());
+    assertFalse(tree.at("/options/include_images").asBoolean(true));
+    assertEquals(Long.MAX_VALUE, tree.at("/options/page_range/1").asLong());
+    assertTrue(tree.at("/options/layout_custom_config/keep_empty_clusters").asBoolean());
+  }
+
+  @Test
+  void pollingPreservesGeneratedTaskDetails() {
+    route =
+        request ->
+            json(
+                200,
+                "{\"task_id\":\"task\",\"task_type\":\"convert\",\"task_status\":\"failure\","
+                    + "\"task_position\":7,\"error_message\":\"conversion failed\"}");
+    var result = gateway.poll(new TaskHandle("task", false), Duration.ZERO);
+    assertEquals(ConversionStatus.FAILURE, result.getTaskStatus());
+    assertEquals(7, result.getTaskPosition());
+    assertEquals("conversion failed", result.getErrorMessage());
+  }
+
+  @Test
+  void omittedGeneratedCollectionsUseServerDefaults() throws Exception {
+    route = request -> json(200, "{}");
+    gateway.convert(new BinaryDocument("a.pdf", new byte[] {1}), new ConvertDocumentsOptions());
+    var options = new ObjectMapper().readTree(requests.getFirst().body()).path("options");
+    assertFalse(options.has("to_formats"));
+    assertFalse(options.has("from_formats"));
+    assertFalse(options.has("page_range"));
+  }
+
+  @Test
+  void generatedOptionsRetainApplicationBoundsAndPreparedModelChecks() {
+    var source = new BinaryDocument("a.html", new byte[] {1});
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> gateway.submit(source, new ConvertDocumentsOptions().toFormats(List.of())));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> gateway.submit(source, new ConvertDocumentsOptions().pageRange(List.of(4L, 1L))));
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            gateway.submit(
+                source,
+                new ConvertDocumentsOptions()
+                    .pipeline(ProcessingPipeline.VLM)
+                    .vlmPipelinePreset("default")));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> gateway.submit(source, new ConvertDocumentsOptions().doCodeEnrichment(true)));
+    assertTrue(requests.isEmpty());
+    gateway.close();
+    var settings = settings(1024, 1024);
+    gateway =
+        new GeneratedDoclingGateway(
+            new DoclingSettings(
+                settings.endpoint(),
+                settings.apiKey(),
+                settings.connectTimeout(),
+                settings.readTimeout(),
+                settings.maxInputBytes(),
+                settings.maxResponseBytes(),
+                Set.of(),
+                Set.of(Enrichment.CODE)));
+    route = request -> json(200, task("task", "pending"));
+    assertEquals(
+        "task",
+        gateway.submit(source, new ConvertDocumentsOptions().doCodeEnrichment(true)).taskId());
+  }
+
+  @Test
   void persistsTaskHandlesPollsAndChecksTerminalState() {
     var polls = new java.util.concurrent.atomic.AtomicInteger();
     route =
@@ -154,10 +246,11 @@ class GeneratedDoclingGatewayTest {
                         ? "success"
                         : "pending"));
     var handle =
-        gateway.submit(new BinaryDocument("a.html", new byte[] {1}), ConversionOptions.standard());
+        gateway.submit(new BinaryDocument("a.html", new byte[] {1}), DoclingOptions.standard());
     assertEquals("opaque-task", handle.taskId());
     assertEquals(
-        TaskState.SUCCESS, gateway.await(handle, Duration.ofSeconds(5), () -> false).state());
+        ConversionStatus.SUCCESS,
+        gateway.await(handle, Duration.ofSeconds(5), () -> false).getTaskStatus());
     assertTrue(
         requests.stream().anyMatch(r -> r.path().startsWith("/v1/status/poll/opaque-task?wait=0")));
   }
@@ -169,7 +262,7 @@ class GeneratedDoclingGatewayTest {
     var result =
         gateway.convert(
             new BinaryDocument("a.html", new byte[] {1}),
-            ConversionOptions.standard().withFormats(Set.of(OutputFormat.DCLX)));
+            DoclingOptions.standard().toFormats(List.of(OutputFormat.DCLX)));
     assertArrayEquals(bytes, result.content());
     assertEquals(
         "zip", new ObjectMapper().readTree(requests.getFirst().body()).at("/target/kind").asText());
@@ -183,7 +276,7 @@ class GeneratedDoclingGatewayTest {
             DocumentIntelligenceException.class,
             () ->
                 gateway.submit(
-                    new BinaryDocument("a.html", new byte[] {1}), ConversionOptions.standard()));
+                    new BinaryDocument("a.html", new byte[] {1}), DoclingOptions.standard()));
     assertEquals("BACKPRESSURE", error.code());
     assertEquals(429, error.problem().getStatus());
     assertFalse(error.toString().contains("secret-key"));
@@ -198,7 +291,7 @@ class GeneratedDoclingGatewayTest {
             DocumentIntelligenceException.class,
             () ->
                 gateway.submit(
-                    new BinaryDocument("a.html", new byte[] {1}), ConversionOptions.standard()));
+                    new BinaryDocument("a.html", new byte[] {1}), DoclingOptions.standard()));
     assertEquals("SUBMISSION_OUTCOME_UNKNOWN", error.code());
     assertEquals(1, requests.size());
   }
@@ -212,13 +305,13 @@ class GeneratedDoclingGatewayTest {
         IllegalArgumentException.class,
         () ->
             gateway.convert(
-                new BinaryDocument("a.html", new byte[] {1, 2}), ConversionOptions.standard()));
+                new BinaryDocument("a.html", new byte[] {1, 2}), DoclingOptions.standard()));
     assertTrue(requests.isEmpty());
     assertThrows(
         DocumentIntelligenceException.class,
         () ->
             gateway.convert(
-                new BinaryDocument("a.html", new byte[] {1}), ConversionOptions.standard()));
+                new BinaryDocument("a.html", new byte[] {1}), DoclingOptions.standard()));
   }
 
   @Test
@@ -228,7 +321,9 @@ class GeneratedDoclingGatewayTest {
         () ->
             gateway.submit(
                 new BinaryDocument("a.html", new byte[] {1}),
-                ConversionOptions.standard().withVlm("granite_docling")));
+                DoclingOptions.standard()
+                    .pipeline(ProcessingPipeline.VLM)
+                    .vlmPipelinePreset("granite_docling")));
     route = request -> json(200, task("different", "success"));
     assertEquals(
         "TASK_ID_MISMATCH",

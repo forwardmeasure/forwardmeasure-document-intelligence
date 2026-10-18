@@ -31,19 +31,23 @@
     <revision>1.1.0</revision>
   </properties>
   <modules>
-    <module>forwardmeasure-document-intelligence-contracts</module>
+    <module>forwardmeasure-document-intelligence-api-specifications</module>
     <module>forwardmeasure-document-intelligence-docling-client-java</module>
+    <module>forwardmeasure-document-intelligence-contracts</module>
     <module>forwardmeasure-document-intelligence-core</module>
     <module>forwardmeasure-document-intelligence-validation</module>
     <module>forwardmeasure-document-intelligence-object-storage</module>
-    <module>forwardmeasure-document-intelligence-spring</module>
-    <module>forwardmeasure-document-intelligence-quarkus</module>
-    <module>forwardmeasure-document-intelligence-micronaut</module>
+    <module>forwardmeasure-document-intelligence-framework-bindings</module>
     <module>forwardmeasure-document-intelligence-cli</module>
     <module>forwardmeasure-document-intelligence-bom</module>
   </modules>
   <dependencyManagement>
     <dependencies>
+      <dependency>
+        <groupId>com.forwardmeasure.documentintelligence</groupId>
+        <artifactId>forwardmeasure-document-intelligence-api-specifications</artifactId>
+        <version>${revision}</version>
+      </dependency>
       <dependency>
         <groupId>com.forwardmeasure.documentintelligence</groupId>
         <artifactId>forwardmeasure-document-intelligence-contracts</artifactId>

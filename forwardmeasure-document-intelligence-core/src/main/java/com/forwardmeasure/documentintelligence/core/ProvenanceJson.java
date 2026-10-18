@@ -14,13 +14,16 @@
  */
 package com.forwardmeasure.documentintelligence.core;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.forwardmeasure.documentintelligence.contracts.ConversionOptions;
 import com.forwardmeasure.documentintelligence.contracts.Digests;
+import com.forwardmeasure.documentintelligence.docling.generated.model.ConvertDocumentsOptions;
 import java.io.IOException;
-import java.util.TreeMap;
+import java.util.Map;
+import java.util.stream.StreamSupport;
 
 /** Canonical serialization for fingerprints, durable handles, receipts and provenance. */
 public final class ProvenanceJson {
@@ -40,22 +43,34 @@ public final class ProvenanceJson {
     return MAPPER.readValue(bytes, type);
   }
 
-  public static String optionsHash(ConversionOptions options) throws IOException {
-    var map = new TreeMap<String, Object>();
-    map.put("pipeline", options.pipeline());
-    map.put("formats", options.formats().stream().map(Enum::name).sorted().toList());
-    map.put("enrichments", options.enrichments().stream().map(Enum::name).sorted().toList());
-    map.put("doOcr", options.doOcr());
-    map.put("forceOcr", options.forceOcr());
-    map.put("ocrLanguages", options.ocrLanguages());
-    map.put("vlmPreset", options.vlmPreset());
-    map.put("imageMode", options.imageMode());
-    map.put("firstPage", options.firstPage());
-    map.put("lastPage", options.lastPage());
-    map.put("includePageImages", options.includePageImages());
-    map.put("imageScale", options.imageScale());
-    map.put("documentTimeout", options.documentTimeout());
-    map.put("stagePresets", new TreeMap<>(options.stagePresets()));
-    return Digests.sha256(encode(map));
+  public static String optionsHash(ConvertDocumentsOptions options) throws IOException {
+    ObjectNode canonical = (ObjectNode) canonical(MAPPER.valueToTree(options));
+    var formats = canonical.get("to_formats");
+    if (formats != null && formats.isArray()) {
+      var sorted = MAPPER.createArrayNode();
+      StreamSupport.stream(formats.spliterator(), false)
+          .map(JsonNode::asText)
+          .distinct()
+          .sorted()
+          .forEach(sorted::add);
+      canonical.set("to_formats", sorted);
+    }
+    return Digests.sha256(encode(canonical));
+  }
+
+  private static JsonNode canonical(JsonNode value) {
+    if (value.isObject()) {
+      var result = MAPPER.createObjectNode();
+      value.properties().stream()
+          .sorted(Map.Entry.comparingByKey())
+          .forEach(entry -> result.set(entry.getKey(), canonical(entry.getValue())));
+      return result;
+    }
+    if (value.isArray()) {
+      var result = MAPPER.createArrayNode();
+      value.forEach(item -> result.add(canonical(item)));
+      return result;
+    }
+    return value;
   }
 }

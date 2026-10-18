@@ -15,19 +15,19 @@
 package com.forwardmeasure.documentintelligence.cli;
 
 import com.forwardmeasure.documentintelligence.contracts.ConversionContext;
-import com.forwardmeasure.documentintelligence.contracts.ConversionOptions;
 import com.forwardmeasure.documentintelligence.contracts.ConversionReceipt;
 import com.forwardmeasure.documentintelligence.contracts.ConversionSubmission;
 import com.forwardmeasure.documentintelligence.contracts.Digests;
-import com.forwardmeasure.documentintelligence.contracts.OutputFormat;
 import com.forwardmeasure.documentintelligence.contracts.RuntimeIdentity;
-import com.forwardmeasure.documentintelligence.contracts.TaskState;
 import com.forwardmeasure.documentintelligence.core.DoclingConfiguration;
+import com.forwardmeasure.documentintelligence.core.DoclingOptions;
 import com.forwardmeasure.documentintelligence.core.DocumentIntelligenceException;
 import com.forwardmeasure.documentintelligence.core.DocumentIntelligenceService;
 import com.forwardmeasure.documentintelligence.core.FileArtifactRepository;
 import com.forwardmeasure.documentintelligence.core.GeneratedDoclingGateway;
 import com.forwardmeasure.documentintelligence.core.ProvenanceJson;
+import com.forwardmeasure.documentintelligence.docling.generated.model.ConversionStatus;
+import com.forwardmeasure.documentintelligence.docling.generated.model.OutputFormat;
 import com.forwardmeasure.documentintelligence.validation.DoclangArchiveValidator;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
@@ -110,12 +110,12 @@ public final class DocumentIntelligenceCli {
                     ? Arrays.stream(args[3].split(","))
                         .map(DocumentIntelligenceCli::format)
                         .collect(Collectors.toUnmodifiableSet())
-                    : Set.of(OutputFormat.JSON, OutputFormat.MARKDOWN);
+                    : Set.of(OutputFormat.JSON, OutputFormat.MD);
             var submission =
                 service.submit(
                     source,
                     Path.of(args[1]).getFileName().toString(),
-                    ConversionOptions.standard().withFormats(formats),
+                    DoclingOptions.standard().toFormats(formats.stream().sorted().toList()),
                     context);
             Path handle = root.resolve(submission.operationId() + ".submission.json");
             Files.write(handle, ProvenanceJson.encode(submission));
@@ -127,7 +127,7 @@ public final class DocumentIntelligenceCli {
                       Duration.parse(
                           environment.getOrDefault("DOCUMENT_INTELLIGENCE_DEADLINE", "PT15M")),
                       () -> false);
-              if (progress.state() != TaskState.SUCCESS)
+              if (progress.getTaskStatus() != ConversionStatus.SUCCESS)
                 throw new DocumentIntelligenceException(
                     "TASK_NOT_SUCCESSFUL", 422, "Task did not complete successfully");
               saveReceipt(root, service.retrieveAndStore(submission), out);
@@ -171,9 +171,7 @@ public final class DocumentIntelligenceCli {
   }
 
   private static OutputFormat format(String value) {
-    for (var format : OutputFormat.values())
-      if (format.wireValue().equals(value.trim())) return format;
-    throw new IllegalArgumentException("Unknown output format");
+    return OutputFormat.fromValue(value.trim());
   }
 
   private static void requireArgs(String[] args, int min, int max) {

@@ -23,23 +23,24 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.forwardmeasure.documentintelligence.contracts.ArtifactReference;
 import com.forwardmeasure.documentintelligence.contracts.BinaryDocument;
 import com.forwardmeasure.documentintelligence.contracts.ConversionContext;
-import com.forwardmeasure.documentintelligence.contracts.ConversionOptions;
 import com.forwardmeasure.documentintelligence.contracts.ConversionPayload;
 import com.forwardmeasure.documentintelligence.contracts.ConversionSubmission;
 import com.forwardmeasure.documentintelligence.contracts.Digests;
-import com.forwardmeasure.documentintelligence.contracts.OutputFormat;
 import com.forwardmeasure.documentintelligence.contracts.RuntimeIdentity;
 import com.forwardmeasure.documentintelligence.contracts.TaskHandle;
-import com.forwardmeasure.documentintelligence.contracts.TaskProgress;
-import com.forwardmeasure.documentintelligence.contracts.TaskState;
 import com.forwardmeasure.documentintelligence.docling.generated.model.CapabilitiesResponse;
+import com.forwardmeasure.documentintelligence.docling.generated.model.ConversionStatus;
+import com.forwardmeasure.documentintelligence.docling.generated.model.ConvertDocumentsOptions;
 import com.forwardmeasure.documentintelligence.docling.generated.model.HierarchicalChunkerOptionsDocumentsRequest;
 import com.forwardmeasure.documentintelligence.docling.generated.model.HybridChunkerOptionsDocumentsRequest;
+import com.forwardmeasure.documentintelligence.docling.generated.model.OutputFormat;
+import com.forwardmeasure.documentintelligence.docling.generated.model.TaskStatusResponse;
 import com.forwardmeasure.documentintelligence.validation.DoclangArchiveValidator;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
@@ -51,19 +52,19 @@ class ArtifactWorkflowTest {
   static final String HASH = "a".repeat(64);
 
   static class Gateway implements DoclingGateway {
-    TaskState state = TaskState.SUCCESS;
+    ConversionStatus state = ConversionStatus.SUCCESS;
     int submits, fetches;
     String response =
         "{\"status\":\"success\",\"document\":{\"json_content\":{\"future\":9223372036854775807},\"md_content\":\"#"
             + " café\"}}";
 
-    public TaskHandle submit(BinaryDocument source, ConversionOptions options) {
+    public TaskHandle submit(BinaryDocument source, ConvertDocumentsOptions options) {
       submits++;
-      return new TaskHandle("task", options.archiveRequired());
+      return new TaskHandle("task", DoclingOptions.archiveRequired(options));
     }
 
-    public TaskProgress poll(TaskHandle task, Duration wait) {
-      return new TaskProgress(task, state, null);
+    public TaskStatusResponse poll(TaskHandle task, Duration wait) {
+      return new TaskStatusResponse().taskId(task.taskId()).taskStatus(state);
     }
 
     public ConversionPayload fetch(TaskHandle task) {
@@ -71,11 +72,11 @@ class ArtifactWorkflowTest {
       return new ConversionPayload(response.getBytes(StandardCharsets.UTF_8), "application/json");
     }
 
-    public ConversionPayload convert(BinaryDocument source, ConversionOptions options) {
+    public ConversionPayload convert(BinaryDocument source, ConvertDocumentsOptions options) {
       return fetch(new TaskHandle("task", false));
     }
 
-    public TaskProgress await(TaskHandle task, Duration timeout, BooleanSupplier cancelled) {
+    public TaskStatusResponse await(TaskHandle task, Duration timeout, BooleanSupplier cancelled) {
       return poll(task, Duration.ZERO);
     }
 
@@ -116,7 +117,7 @@ class ArtifactWorkflowTest {
     var source =
         repository.write(HASH, "source", new byte[] {1, 2, 3}, "application/pdf", Map.of());
     var submission =
-        service.submit(source, "source.pdf", ConversionOptions.standard(), context("tenant-1"));
+        service.submit(source, "source.pdf", DoclingOptions.standard(), context("tenant-1"));
     assertEquals(
         submission,
         ProvenanceJson.decode(ProvenanceJson.encode(submission), ConversionSubmission.class));
@@ -135,7 +136,7 @@ class ArtifactWorkflowTest {
     assertNotEquals(
         submission.operationId(),
         service
-            .submit(source, "source.html", ConversionOptions.standard(), context("tenant-1"))
+            .submit(source, "source.html", DoclingOptions.standard(), context("tenant-1"))
             .operationId());
     var same =
         repository.write(
@@ -148,8 +149,78 @@ class ArtifactWorkflowTest {
     assertNotEquals(
         submission.operationId(),
         service
-            .submit(source, "source.pdf", ConversionOptions.standard(), context("tenant-2"))
+            .submit(source, "source.pdf", DoclingOptions.standard(), context("tenant-2"))
             .operationId());
+  }
+
+  @Test
+  void durableSubmissionOwnsItsGeneratedOptionsSnapshot() throws Exception {
+    var repository = new FileArtifactRepository(root);
+    var service =
+        new DocumentIntelligenceService(
+            new Gateway(), repository, new DoclangArchiveValidator(), 1000);
+    var source = repository.write(HASH, "source", new byte[] {1}, "application/pdf", Map.of());
+    var nested = new java.util.LinkedHashMap<String, Object>(Map.of("threshold", 1));
+    var options =
+        DoclingOptions.standard()
+            .toFormats(new java.util.ArrayList<>(List.of(OutputFormat.JSON, OutputFormat.MD)))
+            .layoutCustomConfig(new java.util.LinkedHashMap<>(Map.of("nested", nested)))
+            .mdCompactTables(true);
+    var submission = service.submit(source, "source.pdf", options, context("scope"));
+    options.getToFormats().clear();
+    nested.put("threshold", 2);
+    submission.options().getToFormats().clear();
+    submission.options().getLayoutCustomConfig().clear();
+    assertEquals(List.of(OutputFormat.JSON, OutputFormat.MD), submission.options().getToFormats());
+    assertEquals(submission.optionsSha256(), ProvenanceJson.optionsHash(submission.options()));
+    var restored =
+        ProvenanceJson.decode(ProvenanceJson.encode(submission), ConversionSubmission.class);
+    assertEquals(submission, restored);
+    assertEquals(
+        Set.of("response.json", "document.json", "document.md"),
+        service.retrieveAndStore(restored).artifacts().keySet());
+  }
+
+  @Test
+  void fingerprintsIncludeEveryGeneratedOptionAndCanonicalizeNestedMaps() throws Exception {
+    var first = new java.util.LinkedHashMap<String, Object>();
+    first.put("z", Map.of("b", 2, "a", 1));
+    first.put("a", true);
+    var second = new java.util.LinkedHashMap<String, Object>();
+    second.put("a", true);
+    second.put("z", Map.of("a", 1, "b", 2));
+    var options = DoclingOptions.standard().layoutCustomConfig(first);
+    var reordered =
+        DoclingOptions.standard()
+            .layoutCustomConfig(second)
+            .toFormats(List.of(OutputFormat.MD, OutputFormat.JSON));
+    assertEquals(ProvenanceJson.optionsHash(options), ProvenanceJson.optionsHash(reordered));
+    assertNotEquals(
+        ProvenanceJson.optionsHash(options),
+        ProvenanceJson.optionsHash(reordered.mdCompactTables(true)));
+    assertNotEquals(
+        ProvenanceJson.optionsHash(options),
+        ProvenanceJson.optionsHash(
+            DoclingOptions.standard()
+                .layoutCustomConfig(Map.of("a", false, "z", Map.of("a", 1, "b", 2)))));
+  }
+
+  @Test
+  void artifactExtractionRejectsUnsupportedFormatsBeforeSubmission() throws Exception {
+    var repository = new FileArtifactRepository(root);
+    var gateway = new Gateway();
+    var service =
+        new DocumentIntelligenceService(gateway, repository, new DoclangArchiveValidator(), 1000);
+    var source = repository.write(HASH, "source", new byte[] {1}, "application/pdf", Map.of());
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            service.submit(
+                source,
+                "source.pdf",
+                new ConvertDocumentsOptions().toFormats(List.of(OutputFormat.YAML)),
+                context("scope")));
+    assertEquals(0, gateway.submits);
   }
 
   @Test
@@ -162,15 +233,15 @@ class ArtifactWorkflowTest {
     Files.write(Path.of(source.uri()), new byte[] {2});
     assertThrows(
         java.io.IOException.class,
-        () -> service.submit(source, "source.pdf", ConversionOptions.standard(), context("scope")));
+        () -> service.submit(source, "source.pdf", DoclingOptions.standard(), context("scope")));
     assertEquals(0, gateway.submits);
     Files.write(Path.of(source.uri()), new byte[] {1});
     var submission =
-        service.submit(source, "source.pdf", ConversionOptions.standard(), context("scope"));
-    gateway.state = TaskState.PARTIAL_SUCCESS;
+        service.submit(source, "source.pdf", DoclingOptions.standard(), context("scope"));
+    gateway.state = ConversionStatus.PARTIAL_SUCCESS;
     assertThrows(DocumentIntelligenceException.class, () -> service.retrieveAndStore(submission));
     assertEquals(0, gateway.fetches);
-    gateway.state = TaskState.SUCCESS;
+    gateway.state = ConversionStatus.SUCCESS;
     gateway.response = "{\"status\":\"success\",\"document\":{}}";
     assertThrows(java.io.IOException.class, () -> service.retrieveAndStore(submission));
   }
@@ -186,7 +257,7 @@ class ArtifactWorkflowTest {
         service.submit(
             source,
             "source.pdf",
-            ConversionOptions.standard().withFormats(Set.of(OutputFormat.DOCLANG)),
+            DoclingOptions.standard().toFormats(List.of(OutputFormat.DOCLANG)),
             context("scope"));
     gateway.response = "{\"status\":\"success\",\"document\":{\"doclang_content\":\"<bad/>\"}}";
     assertThrows(DocumentIntelligenceException.class, () -> service.retrieveAndStore(submission));

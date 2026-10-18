@@ -26,6 +26,11 @@
     <dependencies>
       <dependency>
         <groupId>com.forwardmeasure.documentintelligence</groupId>
+        <artifactId>forwardmeasure-document-intelligence-api-specifications</artifactId>
+        <version>${revision}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.forwardmeasure.documentintelligence</groupId>
         <artifactId>forwardmeasure-document-intelligence-contracts</artifactId>
         <version>${revision}</version>
       </dependency>

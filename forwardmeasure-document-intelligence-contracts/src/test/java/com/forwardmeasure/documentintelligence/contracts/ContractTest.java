@@ -17,10 +17,8 @@ package com.forwardmeasure.documentintelligence.contracts;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URI;
-import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 class ContractTest {
@@ -39,7 +37,7 @@ class ContractTest {
   }
 
   @Test
-  void boundsOpaqueIdentifiersReferencesAndOptions() {
+  void boundsOpaqueIdentifiersAndReferences() {
     assertThrows(IllegalArgumentException.class, () -> new TaskHandle("../task", false));
     assertThrows(
         IllegalArgumentException.class, () -> new BinaryDocument("../file.pdf", new byte[] {1}));
@@ -52,14 +50,5 @@ class ContractTest {
                 "a".repeat(64),
                 1,
                 "application/pdf"));
-    assertThrows(
-        IllegalArgumentException.class, () -> ConversionOptions.standard().withFormats(Set.of()));
-    assertThrows(
-        IllegalArgumentException.class, () -> ConversionOptions.standard().withVlm("default"));
-    assertTrue(ConversionOptions.standard().withImageMode(ImageMode.REFERENCED).archiveRequired());
-    assertTrue(
-        ConversionOptions.standard().withFormats(Set.of(OutputFormat.DCLX)).archiveRequired());
-    for (var state : TaskState.values())
-      assertEquals(state, TaskState.fromWire(state.name().toLowerCase(java.util.Locale.ROOT)));
   }
 }

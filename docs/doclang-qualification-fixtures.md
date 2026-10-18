@@ -81,7 +81,7 @@ synthetic and authorised real evidence is used only in development environments.
 | `source.file` | Path under `corpus/sources/` (or `external/` for uncommitted). |
 | `source.mediaType` | e.g. `application/pdf`. |
 | `source.sha256`, `source.sizeBytes` | Integrity pin of the input. |
-| `options` | The `ConversionOptions` used: `pipeline`, `formats`, `doOcr`, `forceOcr`, `ocrLanguages`, `vlmPreset`, `imageMode`, `firstPage`/`lastPage`, `imageScale`, `enrichments`, `stagePresets`. |
+| `options` | Generated `ConvertDocumentsOptions` using OpenAPI names and values, such as `pipeline: standard`, `to_formats: [doclang]`, `do_ocr`, `force_ocr`, `ocr_lang`, `vlm_pipeline_preset`, `image_export_mode`, `page_range`, `images_scale`, enrichment flags and stage presets. |
 | `expect.validation` | `valid`, or a list of expected `ValidationReport` finding codes. |
 | `expect.structure` | Structural assertions over the DocLang (below). |
 | `golden.doclang`, `golden.dclx` | Golden paths + their sha256; written/verified by Tier 2. |

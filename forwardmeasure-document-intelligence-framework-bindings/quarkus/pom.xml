@@ -17,16 +17,17 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>com.forwardmeasure.documentintelligence</groupId>
-    <artifactId>forwardmeasure-document-intelligence</artifactId>
+    <artifactId>forwardmeasure-document-intelligence-framework-bindings</artifactId>
     <version>${revision}</version>
+    <relativePath>../pom.xml</relativePath>
   </parent>
-  <artifactId>forwardmeasure-document-intelligence-spring</artifactId>
-  <name>ForwardMeasure Document Intelligence spring</name>
+  <artifactId>forwardmeasure-document-intelligence-quarkus</artifactId>
+  <name>ForwardMeasure Document Intelligence quarkus</name>
   <dependencyManagement>
     <dependencies>
       <dependency>
         <groupId>com.forwardmeasure.platform</groupId>
-        <artifactId>forwardmeasure-platform-spring-bom</artifactId>
+        <artifactId>forwardmeasure-platform-quarkus-bom</artifactId>
         <version>${forwardmeasure.platform.version}</version>
         <type>pom</type>
         <scope>import</scope>
@@ -35,17 +36,12 @@
   </dependencyManagement>
   <dependencies>
     <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-autoconfigure</artifactId>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-arc</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-test</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.assertj</groupId>
-      <artifactId>assertj-core</artifactId>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-junit</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -57,5 +53,27 @@
       <artifactId>junit-jupiter</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-jacoco</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>io.quarkus</groupId>
+        <artifactId>quarkus-maven-plugin</artifactId>
+        <extensions>true</extensions>
+        <executions>
+          <execution>
+            <goals>
+              <goal>generate-code</goal>
+              <goal>generate-code-tests</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>

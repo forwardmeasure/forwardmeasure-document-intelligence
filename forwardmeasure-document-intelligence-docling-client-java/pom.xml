@@ -25,7 +25,7 @@
   <dependencies>
     <dependency>
       <groupId>com.forwardmeasure.documentintelligence</groupId>
-      <artifactId>forwardmeasure-document-intelligence-contracts</artifactId>
+      <artifactId>forwardmeasure-document-intelligence-api-specifications</artifactId>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
@@ -70,7 +70,7 @@
               <goal>generate</goal>
             </goals>
             <configuration>
-              <inputSpec>${project.basedir}/../forwardmeasure-document-intelligence-contracts/src/main/resources/META-INF/openapi/docling-serve-1.37.0.codegen.json</inputSpec>
+              <inputSpec>${project.basedir}/../forwardmeasure-document-intelligence-api-specifications/src/main/resources/META-INF/openapi/docling-serve-1.37.0.codegen.json</inputSpec>
               <generatorName>java</generatorName>
               <library>apache-httpclient</library>
               <apiPackage>com.forwardmeasure.documentintelligence.docling.generated.api</apiPackage>
@@ -87,6 +87,7 @@
                 <useJakartaEe>true</useJakartaEe>
                 <openApiNullable>false</openApiNullable>
                 <hideGenerationTimestamp>true</hideGenerationTimestamp>
+                <containerDefaultToNull>true</containerDefaultToNull>
                 <useOneOfInterfaces>false</useOneOfInterfaces>
                 <failOnUnknownProperties>false</failOnUnknownProperties>
               </configOptions>

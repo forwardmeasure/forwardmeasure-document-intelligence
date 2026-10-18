@@ -15,13 +15,13 @@
 package com.forwardmeasure.documentintelligence.core;
 
 import com.forwardmeasure.documentintelligence.contracts.BinaryDocument;
-import com.forwardmeasure.documentintelligence.contracts.ConversionOptions;
 import com.forwardmeasure.documentintelligence.contracts.ConversionPayload;
 import com.forwardmeasure.documentintelligence.contracts.TaskHandle;
-import com.forwardmeasure.documentintelligence.contracts.TaskProgress;
 import com.forwardmeasure.documentintelligence.docling.generated.model.CapabilitiesResponse;
+import com.forwardmeasure.documentintelligence.docling.generated.model.ConvertDocumentsOptions;
 import com.forwardmeasure.documentintelligence.docling.generated.model.HierarchicalChunkerOptionsDocumentsRequest;
 import com.forwardmeasure.documentintelligence.docling.generated.model.HybridChunkerOptionsDocumentsRequest;
+import com.forwardmeasure.documentintelligence.docling.generated.model.TaskStatusResponse;
 import java.time.Duration;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
@@ -34,11 +34,11 @@ public interface DoclingGateway extends AutoCloseable {
 
   CapabilitiesResponse capabilities();
 
-  ConversionPayload convert(BinaryDocument source, ConversionOptions options);
+  ConversionPayload convert(BinaryDocument source, ConvertDocumentsOptions options);
 
-  TaskHandle submit(BinaryDocument source, ConversionOptions options);
+  TaskHandle submit(BinaryDocument source, ConvertDocumentsOptions options);
 
-  TaskProgress poll(TaskHandle task, Duration wait);
+  TaskStatusResponse poll(TaskHandle task, Duration wait);
 
   ConversionPayload fetch(TaskHandle task);
 
@@ -46,7 +46,7 @@ public interface DoclingGateway extends AutoCloseable {
 
   ConversionPayload chunk(HybridChunkerOptionsDocumentsRequest request);
 
-  TaskProgress await(TaskHandle task, Duration timeout, BooleanSupplier cancelled);
+  TaskStatusResponse await(TaskHandle task, Duration timeout, BooleanSupplier cancelled);
 
   @Override
   void close();

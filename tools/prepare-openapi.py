@@ -19,7 +19,7 @@ def output(path,value):
  else:path.write_text(text)
 from pathlib import Path
 R=Path(__file__).resolve().parents[1]
-D=R/'forwardmeasure-document-intelligence-contracts/src/main/resources/META-INF/openapi'
+D=R/'forwardmeasure-document-intelligence-api-specifications/src/main/resources/META-INF/openapi'
 original=json.loads((D/'docling-serve-1.37.0.openapi.json').read_text())
 schema=copy.deepcopy(original)
 def normalize(value):

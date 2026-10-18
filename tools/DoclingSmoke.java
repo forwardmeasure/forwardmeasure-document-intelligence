@@ -12,12 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import com.forwardmeasure.documentintelligence.core.DoclingOptions;
+import java.util.List;
 import com.forwardmeasure.documentintelligence.core.DoclingSettings;
 import com.forwardmeasure.documentintelligence.core.GeneratedDoclingGateway;
 import com.forwardmeasure.documentintelligence.contracts.BinaryDocument;
-import com.forwardmeasure.documentintelligence.contracts.ConversionOptions;
-import com.forwardmeasure.documentintelligence.contracts.OutputFormat;
-import com.forwardmeasure.documentintelligence.contracts.TaskState;
+import com.forwardmeasure.documentintelligence.docling.generated.model.ConvertDocumentsOptions;
+import com.forwardmeasure.documentintelligence.docling.generated.model.OutputFormat;
+import com.forwardmeasure.documentintelligence.docling.generated.model.ConversionStatus;
 import com.forwardmeasure.documentintelligence.validation.DoclangArchiveValidator;
 import com.forwardmeasure.documentintelligence.validation.BoundedZip;
 import com.forwardmeasure.documentintelligence.validation.ValidationLimits;
@@ -35,14 +37,14 @@ public class DoclingSmoke {
   var out=Path.of(args[1]);Files.createDirectories(out);
   try(var gateway=new GeneratedDoclingGateway(settings)){
    if(!gateway.ready())throw new AssertionError("Server not ready");
-   var payload=gateway.convert(document,ConversionOptions.standard().withFormats(Set.of(OutputFormat.JSON,OutputFormat.MARKDOWN,OutputFormat.DOCLANG)));
+   var payload=gateway.convert(document,DoclingOptions.standard().toFormats(List.of(OutputFormat.JSON,OutputFormat.MD,OutputFormat.DOCLANG)));
    Files.write(out.resolve("inline-response.json"),payload.content());
    var tree=new ObjectMapper().readTree(payload.content());if(!tree.path("status").asText().equals("success"))throw new AssertionError("Conversion status: "+tree.path("status"));
    if(!tree.at("/document/md_content").asText().contains("café"))throw new AssertionError("UTF-8 text missing");
    var xml=tree.at("/document/doclang_content").asText().getBytes(StandardCharsets.UTF_8);Files.write(out.resolve("document.doclang.xml"),xml);
    var validator=new DoclangArchiveValidator();var report=validator.validateDoclang(xml);if(!report.valid())throw new AssertionError("DocLang validation: "+report.issues());
-   var task=gateway.submit(document,ConversionOptions.standard().withFormats(Set.of(OutputFormat.JSON,OutputFormat.MARKDOWN,OutputFormat.DOCLANG,OutputFormat.DCLX)));
-   var progress=gateway.await(task,Duration.ofMinutes(2),()->false);if(progress.state()!=TaskState.SUCCESS)throw new AssertionError("Task status: "+progress.state());
+   var task=gateway.submit(document,DoclingOptions.standard().toFormats(List.of(OutputFormat.JSON,OutputFormat.MD,OutputFormat.DOCLANG,OutputFormat.DCLX)));
+   var progress=gateway.await(task,Duration.ofMinutes(2),()->false);if(progress.getTaskStatus()!=ConversionStatus.SUCCESS)throw new AssertionError("Task status: "+progress.getTaskStatus());
    var archive=gateway.fetch(task);Files.write(out.resolve("conversion.zip"),archive.content());var archiveReport=validator.validateArchive(archive.content());if(!archiveReport.valid())throw new AssertionError("Archive validation: "+archiveReport.issues());
    var members=BoundedZip.read(archive.content(),ValidationLimits.defaults());for(var member:members.entrySet())if(member.getKey().endsWith(".dclx")){Files.write(out.resolve("document.dclx"),member.getValue());}
    System.out.println("PASS readiness, inline JSON/Markdown/DocLang, UTF-8, async submit/poll/result, ZIP/DCLX validation: "+members.keySet());
