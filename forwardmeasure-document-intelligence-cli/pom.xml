@@ -17,8 +17,9 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>com.forwardmeasure.documentintelligence</groupId>
-    <artifactId>forwardmeasure-document-intelligence</artifactId>
+    <artifactId>forwardmeasure-document-intelligence-neutral-parent</artifactId>
     <version>${revision}</version>
+    <relativePath>../parents/neutral/pom.xml</relativePath>
   </parent>
   <artifactId>forwardmeasure-document-intelligence-cli</artifactId>
   <name>ForwardMeasure Document Intelligence cli</name>

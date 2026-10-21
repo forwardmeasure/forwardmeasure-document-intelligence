@@ -17,23 +17,12 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>com.forwardmeasure.documentintelligence</groupId>
-    <artifactId>forwardmeasure-document-intelligence-framework-bindings</artifactId>
+    <artifactId>forwardmeasure-document-intelligence-quarkus-parent</artifactId>
     <version>${revision}</version>
-    <relativePath>../pom.xml</relativePath>
+    <relativePath>../../parents/quarkus/pom.xml</relativePath>
   </parent>
   <artifactId>forwardmeasure-document-intelligence-quarkus</artifactId>
   <name>ForwardMeasure Document Intelligence quarkus</name>
-  <dependencyManagement>
-    <dependencies>
-      <dependency>
-        <groupId>com.forwardmeasure.platform</groupId>
-        <artifactId>forwardmeasure-platform-quarkus-bom</artifactId>
-        <version>${forwardmeasure.platform.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-    </dependencies>
-  </dependencyManagement>
   <dependencies>
     <dependency>
       <groupId>io.quarkus</groupId>
