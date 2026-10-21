@@ -31,6 +31,10 @@
     <revision>1.1.0</revision>
   </properties>
   <modules>
+    <module>parents/micronaut</module>
+    <module>parents/quarkus</module>
+    <module>parents/spring</module>
+    <module>parents/neutral</module>
     <module>forwardmeasure-document-intelligence-api-specifications</module>
     <module>forwardmeasure-document-intelligence-docling-client-java</module>
     <module>forwardmeasure-document-intelligence-contracts</module>

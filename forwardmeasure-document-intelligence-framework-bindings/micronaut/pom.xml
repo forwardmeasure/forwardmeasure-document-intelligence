@@ -17,23 +17,12 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>com.forwardmeasure.documentintelligence</groupId>
-    <artifactId>forwardmeasure-document-intelligence-framework-bindings</artifactId>
+    <artifactId>forwardmeasure-document-intelligence-micronaut-parent</artifactId>
     <version>${revision}</version>
-    <relativePath>../pom.xml</relativePath>
+    <relativePath>../../parents/micronaut/pom.xml</relativePath>
   </parent>
   <artifactId>forwardmeasure-document-intelligence-micronaut</artifactId>
   <name>ForwardMeasure Document Intelligence micronaut</name>
-  <dependencyManagement>
-    <dependencies>
-      <dependency>
-        <groupId>com.forwardmeasure.platform</groupId>
-        <artifactId>forwardmeasure-platform-micronaut-bom</artifactId>
-        <version>${forwardmeasure.platform.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-    </dependencies>
-  </dependencyManagement>
   <dependencies>
     <dependency>
       <groupId>io.micronaut</groupId>
